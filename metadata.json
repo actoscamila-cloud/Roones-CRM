@@ -1,0 +1,8 @@
+{
+  "name": "Roones CRM ",
+  "description": "CRM comercial inteligente orientado por IA para clínicas de estética e saúde com operação conversacional, áudio, pipeline e gestão de follow-ups.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
