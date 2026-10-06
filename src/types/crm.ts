@@ -24,6 +24,8 @@ export type TaskCategory =
   | 'administrativo'
   | 'comercial'
   | 'retorno'
+  | 'campanha'
+  | 'interna'
   | 'outro';
 
 export type TaskStatus = 'pendente' | 'em_andamento' | 'concluida' | 'cancelada' | 'atrasada';
@@ -47,9 +49,33 @@ export type InteractionType =
   | 'tarefa'
   | 'alteracao_oportunidade';
 
+/**
+ * Cliente / Conta que a usuária Camila atende (Clínica, Médica, Profissional)
+ */
+export interface ClientAccount {
+  id: string; // ex: 'cli-camila-silva', 'cli-facedoctor', 'cli-thayline'
+  name: string; // ex: 'Clínica Camila Silva'
+  shortName: string; // ex: 'Camila Silva'
+  type: 'clinica_estetica' | 'consultorio_medico' | 'dermatologia' | 'franquia' | 'outro';
+  doctorOrOwner: string; // ex: 'Dra. Camila Silva', 'Augusta / Face Doctor', 'Dra. Thayline Sara'
+  contactPerson?: string;
+  phone: string;
+  email: string;
+  address?: string;
+  color: string; // Hex color for chips & charts
+  badgeBg: string; // Tailwind class
+  defaultFollowUpDays: number;
+  activeCampaigns?: string[];
+  rulesNotes?: string;
+  status: 'ativo' | 'pausado' | 'inativo';
+  createdAt: string;
+}
+
 export interface Patient {
   id: string;
-  clinicId: string;
+  clientId: string; // Clínica / Cliente da usuária
+  clientName?: string;
+  clinicId?: string; // Compatibilidade retroativa
   name: string;
   phone: string;
   whatsapp: string;
@@ -70,7 +96,9 @@ export interface Patient {
 
 export interface Opportunity {
   id: string;
-  clinicId: string;
+  clientId: string; // Clínica / Cliente
+  clientName?: string;
+  clinicId?: string; // Compatibilidade retroativa
   patientId: string;
   patientName: string;
   procedureId?: string;
@@ -91,6 +119,8 @@ export interface Opportunity {
 
 export interface Procedure {
   id: string;
+  clientId?: string;
+  clientName?: string;
   name: string;
   category: string;
   commercialDescription: string;
@@ -103,6 +133,8 @@ export interface Task {
   title: string;
   description?: string;
   responsible: string;
+  clientId?: string; // Opcional! Tarefas internas não possuem cliente vinculado
+  clientName?: string;
   patientId?: string;
   patientName?: string;
   opportunityId?: string;
@@ -121,6 +153,8 @@ export interface Reminder {
   text: string;
   date: string;
   time?: string;
+  clientId?: string;
+  clientName?: string;
   patientId?: string;
   patientName?: string;
   isCompleted: boolean;
@@ -130,6 +164,8 @@ export interface Reminder {
 export interface Interaction {
   id: string;
   patientId: string;
+  clientId?: string;
+  clientName?: string;
   type: InteractionType;
   author: string;
   origin: 'chat_ia' | 'audio' | 'print' | 'manual' | 'sistema';
@@ -148,7 +184,7 @@ export interface AuditLog {
   id: string;
   timestamp: string;
   author: string;
-  entityType: 'paciente' | 'oportunidade' | 'tarefa' | 'procedimento' | 'lembrete' | 'clinica' | 'usuario';
+  entityType: 'paciente' | 'oportunidade' | 'tarefa' | 'procedimento' | 'lembrete' | 'cliente' | 'usuario';
   entityId: string;
   entityName: string;
   action: string;
@@ -157,6 +193,16 @@ export interface AuditLog {
   origin: 'chat_ia' | 'interface_manual' | 'automacao';
 }
 
+export interface User {
+  id: string;
+  name: string; // Camila Rocha
+  role: 'SDR Comercial Multiclínicas' | 'Gestora de Atendimento' | 'Consultora Comercial';
+  email: string;
+  phone?: string;
+  avatar?: string;
+}
+
+// Mantido para compatibilidade onde necessário
 export interface Clinic {
   id: string;
   name: string;
@@ -172,21 +218,13 @@ export interface Clinic {
   createdAt: string;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  role: 'SDR' | 'Gestor' | 'Administrador';
-  email: string;
-  clinicId: string;
-  avatar?: string;
-}
-
 export interface ChatActionExecution {
   type: string;
   description: string;
-  entityType?: 'paciente' | 'oportunidade' | 'tarefa' | 'follow_up' | 'procedimento';
+  entityType?: 'paciente' | 'oportunidade' | 'tarefa' | 'follow_up' | 'procedimento' | 'cliente';
   entityId?: string;
   entityName?: string;
+  clientName?: string;
   details?: Record<string, any>;
 }
 
@@ -198,6 +236,8 @@ export interface ChatMessage {
   audioDuration?: number;
   imageData?: string;
   imageName?: string;
+  clientContextId?: string;
+  clientContextName?: string;
   actionsExecuted?: ChatActionExecution[];
   suggestedPrompts?: string[];
   pendingConfirmation?: {
@@ -208,8 +248,9 @@ export interface ChatMessage {
 }
 
 export interface CRMState {
-  clinic: Clinic;
   currentUser: User;
+  clients: ClientAccount[];
+  selectedClientId: string; // 'todos' ou ID do cliente selecionado
   patients: Patient[];
   opportunities: Opportunity[];
   procedures: Procedure[];
@@ -217,4 +258,5 @@ export interface CRMState {
   reminders: Reminder[];
   interactions: Interaction[];
   auditLogs: AuditLog[];
+  clinic?: Clinic; // Retrocompatibilidade
 }

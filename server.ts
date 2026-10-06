@@ -39,9 +39,58 @@ async function startServer() {
     }
   });
 
+  // 2.1 Clear all data (Zerar dados fictícios para uso real)
+  app.post('/api/db/clear', (req, res) => {
+    try {
+      const state = db.clearAllData(req.body.author || 'Camila Rocha (SDR)');
+      res.json({ success: true, data: state, message: 'Todos os registros foram zerados com sucesso para uso operacional real.' });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 2.2 Clients (Clínicas e Médicas atendidas pela usuária)
+  app.get('/api/clients', (req, res) => {
+    res.json({ success: true, data: db.getClients() });
+  });
+
+  app.post('/api/clients', (req, res) => {
+    try {
+      const client = db.createClient(req.body, req.body.author || 'Camila Rocha (SDR)');
+      res.json({ success: true, data: client });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.put('/api/clients/:id', (req, res) => {
+    try {
+      const updated = db.updateClient(req.params.id, req.body, req.body.author || 'Camila Rocha (SDR)');
+      if (!updated) {
+        return res.status(404).json({ success: false, error: 'Cliente não encontrado' });
+      }
+      res.json({ success: true, data: updated });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.delete('/api/clients/:id', (req, res) => {
+    try {
+      const deleted = db.deleteClient(req.params.id, req.body?.author || 'Camila Rocha (SDR)');
+      if (!deleted) {
+        return res.status(404).json({ success: false, error: 'Cliente não encontrado' });
+      }
+      res.json({ success: true, message: 'Cliente excluído com sucesso.' });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   // 3. Patients
   app.get('/api/patients', (req, res) => {
-    res.json({ success: true, data: db.getPatients() });
+    const clientId = req.query.clientId as string | undefined;
+    res.json({ success: true, data: db.getPatients(clientId) });
   });
 
   app.post('/api/patients', (req, res) => {
@@ -67,7 +116,8 @@ async function startServer() {
 
   // 4. Opportunities
   app.get('/api/opportunities', (req, res) => {
-    res.json({ success: true, data: db.getOpportunities() });
+    const clientId = req.query.clientId as string | undefined;
+    res.json({ success: true, data: db.getOpportunities(clientId) });
   });
 
   app.post('/api/opportunities', (req, res) => {
@@ -93,7 +143,8 @@ async function startServer() {
 
   // 5. Tasks
   app.get('/api/tasks', (req, res) => {
-    res.json({ success: true, data: db.getTasks() });
+    const clientId = req.query.clientId as string | undefined;
+    res.json({ success: true, data: db.getTasks(clientId) });
   });
 
   app.post('/api/tasks', (req, res) => {
@@ -180,12 +231,12 @@ async function startServer() {
   // 10. AI Chat Processing
   app.post('/api/ai/chat', async (req, res) => {
     try {
-      const { message, history, imageBase64, imageMimeType } = req.body;
+      const { message, history, imageBase64, imageMimeType, activeClientId } = req.body;
       if (!message && !imageBase64) {
         return res.status(400).json({ success: false, error: 'Mensagem ou anexo é obrigatório.' });
       }
 
-      const result = await processUserMessage(message || '', history || [], imageBase64, imageMimeType);
+      const result = await processUserMessage(message || '', history || [], imageBase64, imageMimeType, activeClientId);
       const updatedState = db.getState();
 
       res.json({

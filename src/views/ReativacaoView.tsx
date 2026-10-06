@@ -12,22 +12,26 @@ import {
 } from 'lucide-react';
 
 export const ReativacaoView: React.FC = () => {
-  const { state, setSelectedPatientId, setActiveView, sendChatMessage } = useCRM();
+  const { state, setSelectedPatientId, setActiveView, sendChatMessage, selectedClientId } = useCRM();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   if (!state) return null;
 
+  const selectedClient = state.clients.find((c) => c.id === selectedClientId);
+
   // Filter inactive patients (>90d, >120d, lost opportunities, or status 'inativo')
-  const inactivePatients = state.patients.filter(
-    (p) => p.status === 'inativo' || p.tags.includes('Reativação') || p.tags.includes('Mais de 120 dias')
-  );
+  const inactivePatients = state.patients.filter((p) => {
+    const matchesClient = selectedClientId === 'todos' || p.clientId === selectedClientId;
+    const isInactive = p.status === 'inativo' || p.tags.includes('Reativação') || p.tags.includes('Mais de 120 dias');
+    return matchesClient && isInactive;
+  });
 
   const getSuggestedReactivationMessage = (patient: any) => {
     const firstName = patient.name.split(' ')[0];
     const sdrName = state.currentUser?.name?.split(' ')[0] || 'Camila';
-    const clinicName = state.clinic?.name || 'Roones Clínica';
+    const clinicName = patient.clientName || state.clinic?.name || 'Roones CRM';
     if (patient.tags.includes('Radiesse') || patient.commercialNotes?.includes('Radiesse')) {
-      return `Olá ${firstName}! Tudo bem com você? Aqui é a ${sdrName} da ${clinicName}. Estava revisando seus atendimentos com a Dra. Sofia e vi que já faz alguns meses do seu protocolo de bioestimulador. Como está a sua pele? A Dra. pediu para eu verificar se você gostaria de uma consulta de acompanhamento de colágeno nesta semana!`;
+      return `Olá ${firstName}! Tudo bem com você? Aqui é a ${sdrName} da ${clinicName}. Vi que já faz alguns meses do seu protocolo de bioestimulador. Como está a sua pele? Gostaria de verificar se podemos agendar sua consulta de acompanhamento de colágeno nesta semana!`;
     }
     return `Olá ${firstName}! Tudo bem? Aqui é a ${sdrName} da ${clinicName}. Faz um tempinho que não conversamos! Como você tem passado? Preparamos uma condição especial de renovação de procedimentos para este mês e lembrei com carinho de você. Podemos conversar?`;
   };
@@ -77,13 +81,31 @@ export const ReativacaoView: React.FC = () => {
       {/* Patients to Reactivate List */}
       <div className="space-y-4">
         {inactivePatients.length === 0 ? (
-          <div className="py-12 bg-white rounded-2xl border border-slate-200 text-center p-6 space-y-2">
-            <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-            <p className="text-sm font-semibold text-slate-700">Nenhuma paciente inativa detectada no momento.</p>
+          <div className="py-12 bg-white rounded-2xl border border-slate-200/80 text-center p-8 space-y-3 max-w-xl mx-auto shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-900 mx-auto flex items-center justify-center">
+              <RefreshCw className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900 font-display">
+              Nenhuma paciente aguardando reativação no momento
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Pacientes sem contato ou sem agendamento há mais de 15 dias entram aqui automaticamente. Quando surgirem, clique em <strong>"Sugerir Abordagem"</strong> para a Iza gerar uma mensagem de resgate calorosa e personalizada baseada no histórico clínico.
+            </p>
+            <div className="pt-2">
+              <button
+                onClick={() => setActiveView('pipeline')}
+                className="px-4 py-2 bg-[#0F2042] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-xl transition-colors"
+              >
+                Acompanhar Pipeline Ativo
+              </button>
+            </div>
           </div>
         ) : (
           inactivePatients.map((patient) => {
             const message = getSuggestedReactivationMessage(patient);
+            const phoneDigits = patient.phone.replace(/\D/g, '');
+            const encodedMsg = encodeURIComponent(message);
+
             return (
               <div
                 key={patient.id}
@@ -91,11 +113,16 @@ export const ReativacaoView: React.FC = () => {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-base font-bold text-slate-900 font-display">
                         {patient.name}
                       </h3>
-                      <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      <span className="text-slate-300">·</span>
+                      <span className="text-xs text-slate-600 font-medium">
+                        {patient.clientName || 'Clínica Parceira'}
+                      </span>
+                      <span className="text-slate-300">·</span>
+                      <span className="text-xs text-amber-700 font-medium">
                         Inativa há mais de 120 dias
                       </span>
                     </div>
@@ -109,19 +136,29 @@ export const ReativacaoView: React.FC = () => {
                       <span>
                         Último atendimento:{' '}
                         {patient.lastAppointmentDate
-                          ? new Date(patient.lastAppointmentDate).toLocaleDateString()
+                          ? new Date(patient.lastAppointmentDate).toLocaleDateString('pt-BR')
                           : 'Maio de 2026'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <a
+                      href={`https://wa.me/55${phoneDigits}?text=${encodedMsg}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-2xs"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Chamar no WhatsApp</span>
+                    </a>
+
                     <button
                       onClick={() => handleAskAiToReactivate(patient)}
                       className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Pedir Abordagem à Iza</span>
+                      <span>Pedir Variação à Iza</span>
                     </button>
 
                     <button

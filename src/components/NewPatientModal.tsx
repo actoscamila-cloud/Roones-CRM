@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
-import { X, UserPlus, Phone, Tag } from 'lucide-react';
+import { X, UserPlus, Phone, Tag, Building2 } from 'lucide-react';
 
 interface NewPatientModalProps {
   onClose: () => void;
 }
 
 export const NewPatientModal: React.FC<NewPatientModalProps> = ({ onClose }) => {
-  const { quickCreatePatient, setSelectedPatientId, setActiveView } = useCRM();
+  const { state, quickCreatePatient, setSelectedPatientId, setActiveView, selectedClientId } = useCRM();
 
+  const defaultClient = selectedClientId !== 'todos'
+    ? selectedClientId
+    : (state?.clients[0]?.id || 'cli-camila-silva');
+
+  const [clientId, setClientId] = useState(defaultClient);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [origin, setOrigin] = useState('Instagram');
@@ -21,9 +26,13 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({ onClose }) => 
     if (!name.trim()) return;
 
     setIsSubmitting(true);
+    const chosenClient = state?.clients.find((c) => c.id === clientId);
+
     const newPat = await quickCreatePatient({
       name: name.trim(),
       phone: phone.trim(),
+      clientId,
+      clientName: chosenClient?.name,
       origin,
       commercialNotes: notes.trim(),
       nextAction: nextAction.trim() || undefined,
@@ -48,7 +57,7 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({ onClose }) => 
           <div className="flex items-center gap-2">
             <UserPlus className="w-4 h-4 text-blue-900" />
             <h3 className="text-sm font-bold text-slate-900 font-display">
-              Cadastrar Paciente
+              Cadastrar Paciente / Lead
             </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
@@ -57,8 +66,31 @@ export const NewPatientModal: React.FC<NewPatientModalProps> = ({ onClose }) => 
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-3.5 text-xs">
+          {/* Cliente / Clínica Vinculada (Obrigatório) */}
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Nome Completo *</label>
+            <label className="font-semibold text-slate-700 flex items-center gap-1 mb-1">
+              <Building2 className="w-3.5 h-3.5 text-blue-900" />
+              <span>Cliente / Clínica Vinculada *</span>
+            </label>
+            <select
+              required
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              className="w-full p-2.5 bg-blue-50/50 border border-blue-200 rounded-lg text-slate-900 font-semibold focus:outline-none focus:ring-1 focus:ring-blue-900"
+            >
+              {state?.clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.doctorOrOwner})
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-500 mt-1">
+              Cada paciente deve pertencer estritamente a uma clínica da sua carteira.
+            </p>
+          </div>
+
+          <div>
+            <label className="font-semibold text-slate-700 block mb-1">Nome Completo da Paciente *</label>
             <input
               type="text"
               required

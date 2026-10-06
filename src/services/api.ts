@@ -1,4 +1,4 @@
-import { CRMState, Patient, Opportunity, Task, Reminder, Interaction, Procedure } from '../types/crm';
+import { CRMState, ClientAccount, Patient, Opportunity, Task, Reminder, Interaction, Procedure } from '../types/crm';
 
 const API_BASE = '/api';
 
@@ -16,16 +16,66 @@ export async function resetCRMDatabase(): Promise<CRMState> {
   return json.data;
 }
 
+export async function clearCRMDatabase(author = 'Camila Rocha'): Promise<CRMState> {
+  const res = await fetch(`${API_BASE}/db/clear`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ author }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao limpar dados');
+  return json.data;
+}
+
+export async function fetchClientsAPI(): Promise<ClientAccount[]> {
+  const res = await fetch(`${API_BASE}/clients`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao carregar clientes');
+  return json.data;
+}
+
+export async function createClientAPI(data: Partial<ClientAccount>): Promise<ClientAccount> {
+  const res = await fetch(`${API_BASE}/clients`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao cadastrar cliente');
+  return json.data;
+}
+
+export async function updateClientAPI(id: string, data: Partial<ClientAccount>): Promise<ClientAccount> {
+  const res = await fetch(`${API_BASE}/clients/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao atualizar cliente');
+  return json.data;
+}
+
+export async function deleteClientAPI(id: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/clients/${id}`, {
+    method: 'DELETE',
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao excluir cliente');
+  return json.success;
+}
+
 export async function sendChatMessageAPI(
   message: string,
   history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [],
   imageBase64?: string,
-  imageMimeType?: string
+  imageMimeType?: string,
+  activeClientId?: string
 ) {
   const res = await fetch(`${API_BASE}/ai/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history, imageBase64, imageMimeType }),
+    body: JSON.stringify({ message, history, imageBase64, imageMimeType, activeClientId }),
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error || 'Falha ao processar mensagem');
@@ -51,7 +101,7 @@ export async function transcribeAudioAPI(audioBase64: string, mimeType = 'audio/
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error || 'Falha ao transcrever áudio');
-  return json.transcript;
+  return json.transcript ?? '';
 }
 
 export async function createPatientAPI(patientData: Partial<Patient>): Promise<Patient> {

@@ -1,23 +1,53 @@
 import React, { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
-import { X, Calendar, Clock, User, CheckSquare } from 'lucide-react';
+import { X, Calendar, Clock, User, CheckSquare, Building2 } from 'lucide-react';
 import { TaskPriority, TaskCategory } from '../types/crm';
+import { getSystemDateStrings } from '../utils/dateUtils';
 
 interface NewTaskModalProps {
   onClose: () => void;
 }
 
 export const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
-  const { state, quickCreateTask } = useCRM();
+  const { state, quickCreateTask, selectedClientId } = useCRM();
+  const { todayStr } = getSystemDateStrings();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [clientId, setClientId] = useState<string>(selectedClientId !== 'todos' ? selectedClientId : '');
   const [patientId, setPatientId] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('normal');
   const [category, setCategory] = useState<TaskCategory>('follow-up');
-  const [date, setDate] = useState('2026-10-04');
+  const [date, setDate] = useState(todayStr);
   const [time, setTime] = useState('10:00');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Filter patients based on selected client (if a client is chosen)
+  const availablePatients = state?.patients.filter((p) => !clientId || p.clientId === clientId) || [];
+
+  const handlePatientChange = (patId: string) => {
+    setPatientId(patId);
+    if (patId) {
+      const p = state?.patients.find((item) => item.id === patId);
+      if (p && p.clientId) {
+        setClientId(p.clientId);
+      }
+    }
+  };
+
+  const handleClientChange = (cId: string) => {
+    setClientId(cId);
+    if (!cId) {
+      setCategory('interna');
+    }
+    // If selected patient does not belong to new client, reset patient
+    if (patientId) {
+      const p = state?.patients.find((item) => item.id === patientId);
+      if (p && cId && p.clientId !== cId) {
+        setPatientId('');
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,10 +55,13 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
 
     setIsSubmitting(true);
     const selectedPat = state?.patients.find((p) => p.id === patientId);
+    const selectedCli = state?.clients.find((c) => c.id === clientId);
 
     await quickCreateTask({
       title: title.trim(),
       description: description.trim(),
+      clientId: clientId || undefined,
+      clientName: selectedCli ? selectedCli.name : undefined,
       patientId: patientId || undefined,
       patientName: selectedPat ? selectedPat.name : undefined,
       priority,
@@ -70,17 +103,40 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ onClose }) => {
             />
           </div>
 
+          {/* Cliente / Conta da SDR */}
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Vincular a Paciente</label>
+            <label className="font-semibold text-slate-700 flex items-center gap-1 mb-1">
+              <Building2 className="w-3.5 h-3.5 text-blue-900" />
+              <span>Cliente / Clínica Responsável</span>
+            </label>
+            <select
+              value={clientId}
+              onChange={(e) => handleClientChange(e.target.value)}
+              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium"
+            >
+              <option value="">Nenhum (Tarefa Interna / Geral da SDR)</option>
+              {state?.clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              Tarefas sem cliente são categorizadas como internas e aparecem no Meu Dia.
+            </p>
+          </div>
+
+          <div>
+            <label className="font-semibold text-slate-700 block mb-1">Vincular a Paciente (Opcional)</label>
             <select
               value={patientId}
-              onChange={(e) => setPatientId(e.target.value)}
+              onChange={(e) => handlePatientChange(e.target.value)}
               className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800"
             >
-              <option value="">Nenhum (Tarefa geral da clínica)</option>
-              {state?.patients.map((p) => (
+              <option value="">Nenhum (Tarefa sem vínculo a paciente)</option>
+              {availablePatients.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name}
+                  {p.name} {p.clientName ? `(${p.clientName})` : ''}
                 </option>
               ))}
             </select>

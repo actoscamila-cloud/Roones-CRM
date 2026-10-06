@@ -27,7 +27,7 @@ interface PatientDetailModalProps {
 }
 
 export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ patientId, onClose }) => {
-  const { state, addInteraction, quickCreateOpportunity, quickCreateTask } = useCRM();
+  const { state, addInteraction, quickCreateOpportunity, quickCreateTask, sendChatMessage, setActiveView } = useCRM();
   const [activeTab, setActiveTab] = useState<'resumo' | 'timeline' | 'oportunidades' | 'tarefas' | 'notas'>('resumo');
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState<boolean>(false);
@@ -64,6 +64,14 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ patientI
     }
   };
 
+  const handleAskIzaForWhatsApp = () => {
+    sendChatMessage(
+      `Iza, elabore uma mensagem personalizada de WhatsApp para a paciente ${patient.name}, vinculada à ${patient.clientName || 'nossa clínica parceira'}. Considere o histórico de procedimentos dela e o próximo passo comercial ideal.`
+    );
+    setActiveView('chat');
+    onClose();
+  };
+
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newNote.trim()) return;
@@ -86,6 +94,8 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ patientI
     await quickCreateOpportunity({
       patientId: patient.id,
       patientName: patient.name,
+      clientId: patient.clientId,
+      clientName: patient.clientName,
       procedureName: newOppProcedure.trim(),
       estimatedValue: Number(newOppValue) || 2000,
       stage: 'novo_interesse',
@@ -117,6 +127,11 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ patientI
                 <h2 className="text-lg sm:text-xl font-bold text-[#0F2042] font-display">
                   {patient.name}
                 </h2>
+                {patient.clientName && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded text-blue-900 bg-blue-100/80 border border-blue-300">
+                    {patient.clientName}
+                  </span>
+                )}
                 <span className="text-xs font-semibold px-2 py-0.5 rounded text-blue-900 bg-blue-50 border border-blue-200/60 uppercase">
                   {patient.status.replace('_', ' ')}
                 </span>
@@ -257,6 +272,20 @@ export const PatientDetailModal: React.FC<PatientDetailModalProps> = ({ patientI
                 <div className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line bg-slate-50/80 p-3.5 rounded-lg border border-slate-200/60">
                   {aiSummary ||
                     `Paciente ${patient.name} tem status atual de ${patient.status}. Última interação registrada em ${patient.lastInteractionDate.slice(0, 10)}. Possui ${opportunities.length} oportunidade(s) cadastrada(s). Próxima ação recomendada: ${patient.nextAction || 'Não informada'}.\n\nClique no botão "Gerar com a Iza" acima para extrair argumentos estratégicos personalizados.`}
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-blue-100 flex-wrap">
+                  <span className="text-[11px] text-blue-900 font-medium flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-700" />
+                    <span>Precisa abordar esta paciente agora?</span>
+                  </span>
+                  <button
+                    onClick={handleAskIzaForWhatsApp}
+                    className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-blue-200" />
+                    <span>Redigir WhatsApp com a Iza</span>
+                  </button>
                 </div>
               </div>
 

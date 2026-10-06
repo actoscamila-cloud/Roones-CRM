@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
 import { Task, TaskPriority, TaskCategory } from '../types/crm';
+import { getSystemDateStrings, formatDateBR } from '../utils/dateUtils';
 import {
   CheckSquare,
   Clock,
@@ -10,6 +11,7 @@ import {
   Plus,
   Filter,
   User,
+  Sparkles,
 } from 'lucide-react';
 
 interface TarefasViewProps {
@@ -17,17 +19,24 @@ interface TarefasViewProps {
 }
 
 export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) => {
-  const { state, completeTask, setSelectedPatientId, setActiveView } = useCRM();
-  const [tabFilter, setTabFilter] = useState<'hoje' | 'amanha' | 'proximas' | 'atrasadas' | 'concluidas'>('hoje');
+  const { state, completeTask, setSelectedPatientId, setActiveView, selectedClientId, sendChatMessage } = useCRM();
+  const [tabFilter, setTabFilter] = useState<'hoje' | 'amanha' | 'proximas' | 'todas' | 'atrasadas' | 'concluidas'>('hoje');
   const [categoryFilter, setCategoryFilter] = useState<string>('todas');
   const [priorityFilter, setPriorityFilter] = useState<string>('todas');
 
   if (!state) return null;
 
-  const todayStr = '2026-10-04';
-  const tomorrowStr = '2026-10-05';
+  const { todayStr, tomorrowStr } = getSystemDateStrings();
+
+  const selectedClient = state.clients.find((c) => c.id === selectedClientId);
 
   const filteredTasks = state.tasks.filter((t) => {
+    // 0. Client filter: se 'todos', exibe todas. Se clínica selecionada, exibe da clínica OU tarefas internas gerais da SDR
+    const matchesClient =
+      selectedClientId === 'todos' ||
+      t.clientId === selectedClientId ||
+      (!t.clientId && (t.category === 'interna' || categoryFilter === 'interna'));
+
     // 1. Tab date/status filtering
     let matchesTab = true;
     if (tabFilter === 'hoje') {
@@ -36,6 +45,8 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
       matchesTab = t.date === tomorrowStr && t.status !== 'concluida';
     } else if (tabFilter === 'proximas') {
       matchesTab = t.date > tomorrowStr && t.status !== 'concluida';
+    } else if (tabFilter === 'todas') {
+      matchesTab = t.status !== 'concluida';
     } else if (tabFilter === 'atrasadas') {
       matchesTab = t.status === 'atrasada' || (t.date < todayStr && t.status !== 'concluida');
     } else if (tabFilter === 'concluidas') {
@@ -48,11 +59,33 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
     // 3. Priority filter
     const matchesPriority = priorityFilter === 'todas' || t.priority === priorityFilter;
 
-    return matchesTab && matchesCategory && matchesPriority;
+    return matchesClient && matchesTab && matchesCategory && matchesPriority;
   });
 
   const lateCount = state.tasks.filter(
-    (t) => t.status === 'atrasada' || (t.date < todayStr && t.status !== 'concluida')
+    (t) =>
+      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
+      (t.status === 'atrasada' || (t.date < todayStr && t.status !== 'concluida'))
+  ).length;
+
+  const todayCount = state.tasks.filter(
+    (t) =>
+      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
+      t.date === todayStr &&
+      t.status !== 'concluida'
+  ).length;
+
+  const tomorrowCount = state.tasks.filter(
+    (t) =>
+      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
+      t.date === tomorrowStr &&
+      t.status !== 'concluida'
+  ).length;
+
+  const allPendingCount = state.tasks.filter(
+    (t) =>
+      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
+      t.status !== 'concluida'
   ).length;
 
   const getPriorityStyle = (p: TaskPriority) => {
@@ -97,9 +130,10 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
         {/* Main Tabs (Zero-pill segmented buttons) */}
         <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto">
           {[
-            { id: 'hoje', label: 'Hoje' },
-            { id: 'amanha', label: 'Amanhã' },
+            { id: 'hoje', label: `Hoje (${formatDateBR(todayStr).slice(0, 5)}) · ${todayCount}` },
+            { id: 'amanha', label: `Amanhã (${formatDateBR(tomorrowStr).slice(0, 5)}) · ${tomorrowCount}` },
             { id: 'proximas', label: 'Próximos Dias' },
+            { id: 'todas', label: `Todas Ativas (${allPendingCount})` },
             { id: 'atrasadas', label: `Atrasadas (${lateCount})` },
             { id: 'concluidas', label: 'Concluídas' },
           ].map((tab) => (
@@ -127,6 +161,7 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
               className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700"
             >
               <option value="todas">Todas</option>
+              <option value="interna">Interna</option>
               <option value="follow-up">Follow-up</option>
               <option value="lead">Lead</option>
               <option value="orcamento">Orçamento</option>
@@ -177,16 +212,22 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
                   <span className="text-sm font-semibold text-slate-900 font-display">
                     {task.title}
                   </span>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${getPriorityStyle(
-                      task.priority
-                    )}`}
-                  >
-                    {task.priority}
+                  <span className="text-slate-300">·</span>
+                  <span className="text-xs text-slate-600 font-medium">
+                    {task.clientName || 'Interna / Geral'}
                   </span>
+                  <span className="text-slate-300">·</span>
                   <span className="text-xs text-slate-500">
-                    · {task.category}
+                    {task.category}
                   </span>
+                  {(task.priority === 'urgente' || task.priority === 'alta') && (
+                    <>
+                      <span className="text-slate-300">·</span>
+                      <span className="text-[11px] font-bold text-rose-600">
+                        {task.priority === 'urgente' ? 'Urgente' : 'Alta prioridade'}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {task.description && (
@@ -218,20 +259,36 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
                 </div>
               </div>
 
-              {/* Complete Task Button */}
-              {task.status !== 'concluida' ? (
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => completeTask(task.id)}
-                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0 transition-colors"
+                  onClick={() => {
+                    sendChatMessage(
+                      `Iza, me dê orientação sobre a tarefa "${task.title}" (Conta: ${task.clientName || 'Interna'}, Paciente: ${task.patientName || 'Geral'}). Como abordar ou executar isso hoje?`
+                    );
+                    setActiveView('chat');
+                  }}
+                  className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                  title="Pedir orientação à Iza"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Concluir</span>
+                  <Sparkles className="w-3.5 h-3.5 text-blue-800" />
+                  <span className="hidden sm:inline">Orientar com Iza</span>
                 </button>
-              ) : (
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg shrink-0">
-                  Concluída
-                </span>
-              )}
+
+                {task.status !== 'concluida' ? (
+                  <button
+                    onClick={() => completeTask(task.id)}
+                    className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0 transition-colors"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Concluir</span>
+                  </button>
+                ) : (
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg shrink-0">
+                    Concluída
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>

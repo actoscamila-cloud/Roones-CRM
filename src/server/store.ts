@@ -1,11 +1,75 @@
-import { CRMState, Patient, Opportunity, Procedure, Task, Reminder, Interaction, AuditLog, Clinic, User } from '../types/crm';
+import { CRMState, ClientAccount, Patient, Opportunity, Procedure, Task, Reminder, Interaction, AuditLog, User, Clinic } from '../types/crm';
 
-export const initialClinic: Clinic = {
-  id: 'clinic-lumina-01',
-  name: 'Clínica Lumina Estética & Dermatologia',
-  phone: '(11) 3280-9900',
-  email: 'comercial@clinicalumina.com.br',
-  address: 'Av. Brigadeiro Faria Lima, 2800 - Itaim Bibi, São Paulo - SP',
+export const initialClients: ClientAccount[] = [
+  {
+    id: 'cli-camila-silva',
+    name: 'Clínica Camila Silva',
+    shortName: 'Camila Silva',
+    type: 'clinica_estetica',
+    doctorOrOwner: 'Dra. Camila Silva',
+    phone: '(11) 99120-4400',
+    email: 'contato@clinicacamilasilva.com.br',
+    address: 'Alameda Santos, 1200 - Jardins, São Paulo - SP',
+    color: '#2563EB', // Blue
+    badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
+    defaultFollowUpDays: 3,
+    activeCampaigns: [],
+    rulesNotes: 'Prazo padrão de follow-up: 3 dias.',
+    status: 'ativo',
+    createdAt: '2026-01-15T08:00:00.000Z',
+  },
+  {
+    id: 'cli-facedoctor',
+    name: 'Clínica Face Doctor Parque Prado',
+    shortName: 'Face Doctor',
+    type: 'franquia',
+    doctorOrOwner: 'Dra. Augusta / Face Doctor',
+    contactPerson: 'Augusta (Gerente)',
+    phone: '(19) 3271-8899',
+    email: 'parqueprado@facedoctor.com.br',
+    address: 'Shopping Parque Prado, Loja 45 - Campinas - SP',
+    color: '#7C3AED', // Purple
+    badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
+    defaultFollowUpDays: 5,
+    activeCampaigns: [],
+    rulesNotes: 'Prazo padrão de follow-up: 5 dias.',
+    status: 'ativo',
+    createdAt: '2026-02-01T09:00:00.000Z',
+  },
+  {
+    id: 'cli-thayline',
+    name: 'Clínica Dra. Thayline Sara',
+    shortName: 'Dra. Thayline',
+    type: 'consultorio_medico',
+    doctorOrOwner: 'Dra. Thayline Sara',
+    phone: '(11) 98770-5522',
+    email: 'atendimento@drathaylinesara.com.br',
+    address: 'Av. Brigadeiro Faria Lima, 2800 - Itaim Bibi, São Paulo - SP',
+    color: '#059669', // Emerald
+    badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    defaultFollowUpDays: 4,
+    activeCampaigns: [],
+    rulesNotes: 'Prazo padrão de follow-up: 4 dias.',
+    status: 'ativo',
+    createdAt: '2026-03-10T10:00:00.000Z',
+  },
+];
+
+export const initialUser: User = {
+  id: 'user-camila-01',
+  name: 'Camila Rocha',
+  role: 'SDR Comercial Multiclínicas',
+  email: 'camila.sdr@gmail.com',
+  phone: '(11) 99887-1122',
+  avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+};
+
+export const initialClinicFallback: Clinic = {
+  id: 'cli-camila-silva',
+  name: 'Roones CRM - Camila Rocha (SDR Multiclínicas)',
+  phone: '(11) 99887-1122',
+  email: 'camila.sdr@gmail.com',
+  address: 'São Paulo - SP',
   timezone: 'America/Sao_Paulo',
   settings: {
     autoNextActionAlert: true,
@@ -15,21 +79,12 @@ export const initialClinic: Clinic = {
   createdAt: '2026-01-10T08:00:00.000Z',
 };
 
-export const initialUser: User = {
-  id: 'user-camila-01',
-  name: 'Camila Rocha',
-  role: 'SDR',
-  email: 'camila.sdr@clinicalumina.com.br',
-  clinicId: 'clinic-lumina-01',
-  avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-};
-
 export const initialProcedures: Procedure[] = [
   {
     id: 'proc-botox',
     name: 'Botox Terço Superior',
     category: 'Injetáveis',
-    commercialDescription: 'Toxina botulínica para rugas dinâmicas da testa, glabela e pés de galinha. Duração média 4 a 6 meses.',
+    commercialDescription: 'Toxina botulínica para rugas dinâmicas da testa, glabela e pés de galinha.',
     referencePrice: 1800,
     status: 'ativo',
   },
@@ -37,7 +92,7 @@ export const initialProcedures: Procedure[] = [
     id: 'proc-olheiras',
     name: 'Preenchimento de Olheiras',
     category: 'Injetáveis',
-    commercialDescription: 'Ácido hialurônico de baixa densidade para volumização da calha lacrimal e aspecto descansado.',
+    commercialDescription: 'Ácido hialurônico para volumização e hidratação da calha lacrimal.',
     referencePrice: 2400,
     status: 'ativo',
   },
@@ -45,15 +100,15 @@ export const initialProcedures: Procedure[] = [
     id: 'proc-labial',
     name: 'Preenchimento Labial',
     category: 'Injetáveis',
-    commercialDescription: 'Definição do contorno e hidratação volumétrica dos lábios com ácido hialurônico premium.',
+    commercialDescription: 'Contorno e hidratação labial com ácido hialurônico premium.',
     referencePrice: 2200,
     status: 'ativo',
   },
   {
     id: 'proc-sculptra',
-    name: 'Bioestimulador Sculptra Facial',
+    name: 'Bioestimulador Sculptra',
     category: 'Bioestimuladores',
-    commercialDescription: 'Ácido poli-L-láctico para estímulo intenso de colágeno natural, melhora do contorno e sustentação.',
+    commercialDescription: 'Ácido poli-L-láctico para estímulo intenso de colágeno natural e sustentação.',
     referencePrice: 3800,
     status: 'ativo',
   },
@@ -61,7 +116,7 @@ export const initialProcedures: Procedure[] = [
     id: 'proc-radiesse',
     name: 'Bioestimulador Radiesse',
     category: 'Bioestimuladores',
-    commercialDescription: 'Hidroxiapatita de cálcio para efeito lifting imediato e estímulo prolongado de colágeno.',
+    commercialDescription: 'Hidroxiapatita de cálcio para efeito lifting e colágeno.',
     referencePrice: 3500,
     status: 'ativo',
   },
@@ -69,393 +124,32 @@ export const initialProcedures: Procedure[] = [
     id: 'proc-ultraformer',
     name: 'Ultraformer III Full Face',
     category: 'Tecnologias',
-    commercialDescription: 'Ultrassom micro e macrofocado para ancoragem muscular e retração da flacidez facial e pescoço.',
+    commercialDescription: 'Ultrassom focado para ancoragem muscular e retração de flacidez.',
     referencePrice: 4200,
     status: 'ativo',
   },
-  {
-    id: 'proc-limpeza',
-    name: 'Limpeza de Pele Fotônica',
-    category: 'Tratamentos Faciais',
-    commercialDescription: 'Higienização profunda com extração por sucção, peeling de diamante e ledterapia cicatrizante.',
-    referencePrice: 380,
-    status: 'ativo',
-  },
 ];
 
-export const initialPatients: Patient[] = [
-  {
-    id: 'pat-juliana',
-    clinicId: 'clinic-lumina-01',
-    name: 'Juliana Castro',
-    phone: '(11) 98765-4321',
-    whatsapp: '5511987654321',
-    email: 'juliana.castro@gmail.com',
-    origin: 'Indicação',
-    tags: ['Injetáveis', 'Botox Realizado', 'Interesse Olheiras'],
-    status: 'ativo',
-    firstContactDate: '2026-09-15T10:00:00.000Z',
-    lastInteractionDate: '2026-10-02T16:30:00.000Z',
-    lastAppointmentDate: '2026-10-02T15:00:00.000Z',
-    nextAction: 'Ligar para follow-up sobre preenchimento de olheira',
-    nextActionDate: '2026-10-11T14:00:00.000Z',
-    commercialNotes: 'Muito exigente com naturalidade. Amou o resultado do Botox. Mencionou que no mês que vem deve estar mais tranquila no trabalho para fazer olheiras.',
-    createdAt: '2026-09-15T10:00:00.000Z',
-    updatedAt: '2026-10-02T16:30:00.000Z',
-  },
-  {
-    id: 'pat-fernanda',
-    clinicId: 'clinic-lumina-01',
-    name: 'Fernanda Lima',
-    phone: '(11) 97654-3210',
-    whatsapp: '5511976543210',
-    email: 'fernanda.lima@outlook.com',
-    origin: 'Instagram',
-    tags: ['Bioestimulador', 'Follow-up Quente'],
-    status: 'em_atendimento',
-    firstContactDate: '2026-08-20T11:00:00.000Z',
-    lastInteractionDate: '2026-10-03T17:15:00.000Z',
-    lastAppointmentDate: '2026-09-05T14:00:00.000Z',
-    nextAction: 'Enviar condição especial do Sculptra e agendar sessão',
-    nextActionDate: '2026-10-05T10:30:00.000Z',
-    commercialNotes: 'Já fez Botox no mês passado. Quer firmeza no terço inferior. Conversou sobre parcelamento em até 10x.',
-    createdAt: '2026-08-20T11:00:00.000Z',
-    updatedAt: '2026-10-03T17:15:00.000Z',
-  },
-  {
-    id: 'pat-ana',
-    clinicId: 'clinic-lumina-01',
-    name: 'Ana Beatriz Silveira',
-    phone: '(11) 99123-4567',
-    whatsapp: '5511991234567',
-    email: 'anabeatriz.s@uol.com.br',
-    origin: 'Google',
-    tags: ['Orçamento Pendente', 'Ultraformer'],
-    status: 'em_atendimento',
-    firstContactDate: '2026-09-28T09:30:00.000Z',
-    lastInteractionDate: '2026-10-01T11:00:00.000Z',
-    nextAction: 'Retomar contato sobre proposta de Ultraformer enviada',
-    nextActionDate: '2026-10-03T15:00:00.000Z', // Atrasada de ontem para destacar no Meu Dia!
-    commercialNotes: 'Pediu orçamento detalhado para Ultraformer face completa + papada.',
-    createdAt: '2026-09-28T09:30:00.000Z',
-    updatedAt: '2026-10-01T11:00:00.000Z',
-  },
-  {
-    id: 'pat-mariana',
-    clinicId: 'clinic-lumina-01',
-    name: 'Mariana Souza',
-    phone: '(11) 98877-6655',
-    whatsapp: '5511988776655',
-    email: 'mariana.souza92@gmail.com',
-    origin: 'Instagram',
-    tags: ['Lead Novo', 'Preenchimento Labial'],
-    status: 'lead',
-    firstContactDate: '2026-10-04T09:00:00.000Z',
-    lastInteractionDate: '2026-10-04T09:15:00.000Z',
-    nextAction: 'Apresentar protocolo labial e agendar avaliação',
-    nextActionDate: '2026-10-04T16:00:00.000Z',
-    commercialNotes: 'Mandou direct querendo saber valores de preenchimento labial com foco em hidratação e volume sutil.',
-    createdAt: '2026-10-04T09:00:00.000Z',
-    updatedAt: '2026-10-04T09:15:00.000Z',
-  },
-  {
-    id: 'pat-carla',
-    clinicId: 'clinic-lumina-01',
-    name: 'Carla Menezes',
-    phone: '(11) 97711-2233',
-    whatsapp: '5511977112233',
-    email: 'carla.menezes@adv.com.br',
-    origin: 'Campanha',
-    tags: ['Reativação', 'Mais de 120 dias'],
-    status: 'inativo',
-    firstContactDate: '2026-04-10T14:00:00.000Z',
-    lastInteractionDate: '2026-05-25T11:30:00.000Z',
-    lastAppointmentDate: '2026-05-25T10:00:00.000Z',
-    nextAction: 'Propor protocolo de manutenção de colágeno',
-    nextActionDate: '2026-10-06T10:00:00.000Z',
-    commercialNotes: 'Fez Radiesse em maio. Excelente resultado. Já está no período ideal para revisão e nova sessão de bioestímulo.',
-    createdAt: '2026-04-10T14:00:00.000Z',
-    updatedAt: '2026-05-25T11:30:00.000Z',
-  },
-];
+export const initialPatients: Patient[] = [];
 
-export const initialOpportunities: Opportunity[] = [
-  {
-    id: 'opp-juliana-botox',
-    clinicId: 'clinic-lumina-01',
-    patientId: 'pat-juliana',
-    patientName: 'Juliana Castro',
-    procedureId: 'proc-botox',
-    procedureName: 'Botox Terço Superior',
-    stage: 'fechado',
-    estimatedValue: 1800,
-    proposedValue: 1800,
-    interest: 'Manter linhas da testa e glabela relaxadas',
-    nextAction: 'Revisão de 15 dias',
-    nextActionDate: '2026-10-17T15:00:00.000Z',
-    assignee: 'Camila Rocha',
-    notes: 'Procedimento realizado com Dra. Sofia. Paciente saiu extremamente satisfeita.',
-    createdAt: '2026-09-18T10:00:00.000Z',
-    updatedAt: '2026-10-02T16:00:00.000Z',
-  },
-  {
-    id: 'opp-juliana-olheiras',
-    clinicId: 'clinic-lumina-01',
-    patientId: 'pat-juliana',
-    patientName: 'Juliana Castro',
-    procedureId: 'proc-olheiras',
-    procedureName: 'Preenchimento de Olheiras',
-    stage: 'aguardando_decisao',
-    estimatedValue: 2400,
-    interest: 'Suavizar olheira funda / aspecto cansado',
-    objection: 'Prefere aguardar o próximo mês por fluxo financeiro',
-    nextAction: 'Ligar após dia 10 para apresentar opção de parcelamento',
-    nextActionDate: '2026-10-11T14:00:00.000Z',
-    assignee: 'Camila Rocha',
-    notes: 'Dra. Sofia avaliou e indicou 1 seringa de Restylane Lyft/Kysse.',
-    createdAt: '2026-10-02T16:30:00.000Z',
-    updatedAt: '2026-10-02T16:30:00.000Z',
-  },
-  {
-    id: 'opp-fernanda-sculptra',
-    clinicId: 'clinic-lumina-01',
-    patientId: 'pat-fernanda',
-    patientName: 'Fernanda Lima',
-    procedureId: 'proc-sculptra',
-    procedureName: 'Bioestimulador Sculptra Facial',
-    stage: 'proposta',
-    estimatedValue: 3800,
-    proposedValue: 3600,
-    interest: 'Firmeza no contorno facial e prevenção da flacidez',
-    nextAction: 'Enviar proposta final com condição de lançamento de outubro',
-    nextActionDate: '2026-10-05T10:30:00.000Z',
-    assignee: 'Camila Rocha',
-    notes: 'Quente para fechar nesta semana.',
-    createdAt: '2026-09-20T14:00:00.000Z',
-    updatedAt: '2026-10-03T17:15:00.000Z',
-  },
-  {
-    id: 'opp-ana-ultraformer',
-    clinicId: 'clinic-lumina-01',
-    patientId: 'pat-ana',
-    patientName: 'Ana Beatriz Silveira',
-    procedureId: 'proc-ultraformer',
-    procedureName: 'Ultraformer III Full Face',
-    stage: 'aguardando_decisao',
-    estimatedValue: 4200,
-    proposedValue: 4200,
-    interest: 'Tratar papada e contorno mandibular',
-    objection: 'Comparando com outra clínica do bairro',
-    nextAction: 'Ligar para destacar diferenciais do nosso protocolo médico',
-    nextActionDate: '2026-10-03T15:00:00.000Z', // Atrasada!
-    assignee: 'Camila Rocha',
-    notes: 'Orçamento entregue por WhatsApp.',
-    createdAt: '2026-09-28T10:00:00.000Z',
-    updatedAt: '2026-10-01T11:00:00.000Z',
-  },
-  {
-    id: 'opp-mariana-labial',
-    clinicId: 'clinic-lumina-01',
-    patientId: 'pat-mariana',
-    patientName: 'Mariana Souza',
-    procedureId: 'proc-labial',
-    procedureName: 'Preenchimento Labial',
-    stage: 'primeiro_contato',
-    estimatedValue: 2200,
-    interest: 'Hidratação e contorno labial sutil',
-    nextAction: 'Confirmar agendamento de consulta avaliativa',
-    nextActionDate: '2026-10-04T16:00:00.000Z',
-    assignee: 'Camila Rocha',
-    notes: 'Chegou hoje pelo direct do Instagram.',
-    createdAt: '2026-10-04T09:00:00.000Z',
-    updatedAt: '2026-10-04T09:15:00.000Z',
-  },
-];
+export const initialOpportunities: Opportunity[] = [];
 
-export const initialTasks: Task[] = [
-  {
-    id: 'task-1',
-    title: 'Mariana Souza — Confirmar horário de avaliação labial',
-    description: 'Lead do Instagram. Enviar opções de horários de terça e quarta com Dra. Sofia.',
-    responsible: 'Camila Rocha',
-    patientId: 'pat-mariana',
-    patientName: 'Mariana Souza',
-    opportunityId: 'opp-mariana-labial',
-    priority: 'alta',
-    category: 'lead',
-    date: '2026-10-04',
-    time: '16:00',
-    status: 'pendente',
-    origin: 'ia_chat',
-    createdAt: '2026-10-04T09:15:00.000Z',
-  },
-  {
-    id: 'task-2',
-    title: 'Ana Beatriz — Follow-up do orçamento de Ultraformer',
-    description: 'Proposta enviada há 3 dias. Ligar e reforçar os diferenciais da tecnologia e acompanhamento médico.',
-    responsible: 'Camila Rocha',
-    patientId: 'pat-ana',
-    patientName: 'Ana Beatriz Silveira',
-    opportunityId: 'opp-ana-ultraformer',
-    priority: 'urgente',
-    category: 'follow-up',
-    date: '2026-10-03', // Ontem -> Atrasada
-    time: '15:00',
-    status: 'atrasada',
-    origin: 'manual',
-    createdAt: '2026-10-01T11:00:00.000Z',
-  },
-  {
-    id: 'task-3',
-    title: 'Fernanda Lima — Apresentar condição especial do Sculptra',
-    description: 'Retornar conforme combinado com proposta final em 10x sem juros.',
-    responsible: 'Camila Rocha',
-    patientId: 'pat-fernanda',
-    patientName: 'Fernanda Lima',
-    opportunityId: 'opp-fernanda-sculptra',
-    priority: 'alta',
-    category: 'orcamento',
-    date: '2026-10-05',
-    time: '10:30',
-    status: 'pendente',
-    origin: 'ia_chat',
-    createdAt: '2026-10-03T17:15:00.000Z',
-  },
-  {
-    id: 'task-4',
-    title: 'Juliana Castro — Follow-up sobre preenchimento de olheira',
-    description: 'Ligar após dia 10 conforme combinado na consulta de Botox.',
-    responsible: 'Camila Rocha',
-    patientId: 'pat-juliana',
-    patientName: 'Juliana Castro',
-    opportunityId: 'opp-juliana-olheiras',
-    priority: 'normal',
-    category: 'follow-up',
-    date: '2026-10-11',
-    time: '14:00',
-    status: 'pendente',
-    origin: 'ia_chat',
-    createdAt: '2026-10-02T16:30:00.000Z',
-  },
-  {
-    id: 'task-5',
-    title: 'Carla Menezes — Abordagem de reativação (120+ dias)',
-    description: 'Enviar mensagem carinhosa de acompanhamento pós-Radiesse e convite para avaliação.',
-    responsible: 'Camila Rocha',
-    patientId: 'pat-carla',
-    patientName: 'Carla Menezes',
-    priority: 'normal',
-    category: 'reativacao',
-    date: '2026-10-06',
-    time: '10:00',
-    status: 'pendente',
-    origin: 'automacao',
-    createdAt: '2026-10-04T08:00:00.000Z',
-  },
-];
+export const initialTasks: Task[] = [];
 
-export const initialReminders: Reminder[] = [
-  {
-    id: 'rem-1',
-    text: 'Conferir lista de pacientes sem retorno há mais de 30 dias na sexta-feira',
-    date: '2026-10-09',
-    time: '09:00',
-    isCompleted: false,
-    createdAt: '2026-10-03T12:00:00.000Z',
-  },
-  {
-    id: 'rem-2',
-    text: 'Checar estoque de seringas de Sculptra com a enfermeira chefe',
-    date: '2026-10-05',
-    time: '09:30',
-    isCompleted: false,
-    createdAt: '2026-10-04T08:30:00.000Z',
-  },
-];
+export const initialReminders: Reminder[] = [];
 
-export const initialInteractions: Interaction[] = [
-  {
-    id: 'int-1',
-    patientId: 'pat-juliana',
-    type: 'atendimento',
-    author: 'Dra. Sofia',
-    origin: 'manual',
-    content: 'Realizou aplicação de toxina botulínica no terço superior (50U). Procedimento transcorreu com sucesso e sem intercorrências.',
-    date: '2026-10-02T15:30:00.000Z',
-  },
-  {
-    id: 'int-2',
-    patientId: 'pat-juliana',
-    type: 'proposta',
-    author: 'Camila Rocha',
-    origin: 'chat_ia',
-    content: 'Conversado sobre preenchimento de olheira com ácido hialurônico. Paciente gostou muito da explicação, porém preferiu esperar o próximo mês. Programado retorno após dia 10.',
-    date: '2026-10-02T16:30:00.000Z',
-  },
-  {
-    id: 'int-3',
-    patientId: 'pat-fernanda',
-    type: 'whatsapp',
-    author: 'Camila Rocha',
-    origin: 'chat_ia',
-    content: 'Fernanda retornou dizendo que amou o efeito do Botox e está animada para iniciar o Sculptra. Pediu para fechar as condições na segunda-feira.',
-    date: '2026-10-03T17:15:00.000Z',
-  },
-  {
-    id: 'int-4',
-    patientId: 'pat-mariana',
-    type: 'lead_recebido',
-    author: 'Sistema',
-    origin: 'sistema',
-    content: 'Lead recebido via Direct Instagram solicitando valores e detalhes sobre preenchimento labial.',
-    date: '2026-10-04T09:00:00.000Z',
-  },
-];
+export const initialInteractions: Interaction[] = [];
 
-export const initialAuditLogs: AuditLog[] = [
-  {
-    id: 'log-1',
-    timestamp: '2026-10-02T16:30:00.000Z',
-    author: 'IA (via Chat SDR)',
-    entityType: 'oportunidade',
-    entityId: 'opp-juliana-olheiras',
-    entityName: 'Juliana Castro - Preenchimento de Olheiras',
-    action: 'Criação de Oportunidade',
-    newValue: 'Status: Aguardando Decisão | Próxima ação: 11/10/2026',
-    origin: 'chat_ia',
-  },
-  {
-    id: 'log-2',
-    timestamp: '2026-10-03T17:15:00.000Z',
-    author: 'IA (via Chat SDR)',
-    entityType: 'tarefa',
-    entityId: 'task-3',
-    entityName: 'Fernanda Lima - Sculptra',
-    action: 'Criação de Tarefa',
-    newValue: 'Data: 05/10/2026 | Prioridade: Alta',
-    origin: 'chat_ia',
-  },
-  {
-    id: 'log-3',
-    timestamp: '2026-10-04T09:15:00.000Z',
-    author: 'IA (via Chat SDR)',
-    entityType: 'paciente',
-    entityId: 'pat-mariana',
-    entityName: 'Mariana Souza',
-    action: 'Cadastro de Novo Paciente',
-    newValue: 'Telefone: (11) 98877-6655 | Origem: Instagram',
-    origin: 'chat_ia',
-  },
-];
+export const initialAuditLogs: AuditLog[] = [];
 
-// In-Memory Database Store Class with full CRUD & Audit Trail
 class DatabaseStore {
   private state: CRMState;
 
   constructor() {
     this.state = {
-      clinic: { ...initialClinic },
       currentUser: { ...initialUser },
+      clients: JSON.parse(JSON.stringify(initialClients)),
+      selectedClientId: 'todos',
       patients: JSON.parse(JSON.stringify(initialPatients)),
       opportunities: JSON.parse(JSON.stringify(initialOpportunities)),
       procedures: JSON.parse(JSON.stringify(initialProcedures)),
@@ -463,25 +157,26 @@ class DatabaseStore {
       reminders: JSON.parse(JSON.stringify(initialReminders)),
       interactions: JSON.parse(JSON.stringify(initialInteractions)),
       auditLogs: JSON.parse(JSON.stringify(initialAuditLogs)),
+      clinic: { ...initialClinicFallback },
     };
   }
 
   public getState(): CRMState {
-    // Automatically flag past due tasks as 'atrasada'
-    const todayStr = '2026-10-04';
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     this.state.tasks.forEach((t) => {
       if (t.status === 'pendente' && t.date < todayStr) {
         t.status = 'atrasada';
       }
     });
-
     return this.state;
   }
 
   public resetToDefault() {
     this.state = {
-      clinic: { ...initialClinic },
       currentUser: { ...initialUser },
+      clients: JSON.parse(JSON.stringify(initialClients)),
+      selectedClientId: 'todos',
       patients: JSON.parse(JSON.stringify(initialPatients)),
       opportunities: JSON.parse(JSON.stringify(initialOpportunities)),
       procedures: JSON.parse(JSON.stringify(initialProcedures)),
@@ -489,7 +184,26 @@ class DatabaseStore {
       reminders: JSON.parse(JSON.stringify(initialReminders)),
       interactions: JSON.parse(JSON.stringify(initialInteractions)),
       auditLogs: JSON.parse(JSON.stringify(initialAuditLogs)),
+      clinic: { ...initialClinicFallback },
     };
+    return this.state;
+  }
+
+  public clearAllData(author = 'Usuária'): CRMState {
+    this.state.patients = [];
+    this.state.opportunities = [];
+    this.state.tasks = [];
+    this.state.reminders = [];
+    this.state.interactions = [];
+    this.state.auditLogs = [];
+    this.logAudit(
+      author,
+      'cliente',
+      'base-operacional',
+      'Base de Dados',
+      'Limpeza Geral',
+      'Todos os dados de teste foram apagados. Sistema pronto para operação real.'
+    );
     return this.state;
   }
 
@@ -504,106 +218,240 @@ class DatabaseStore {
     origin: AuditLog['origin'] = 'chat_ia'
   ) {
     const log: AuditLog = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: `log-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
       timestamp: new Date().toISOString(),
       author,
       entityType,
       entityId,
       entityName,
       action,
-      previousValue,
       newValue,
+      previousValue,
       origin,
     };
     this.state.auditLogs.unshift(log);
+    if (this.state.auditLogs.length > 300) {
+      this.state.auditLogs.pop();
+    }
   }
 
-  // Clinic & User Settings Updates
-  public updateClinic(updates: Partial<Clinic>, author = 'Camila Rocha (SDR)'): Clinic {
-    const previous = { ...this.state.clinic };
-    this.state.clinic = {
-      ...previous,
-      ...updates,
-      settings: {
-        ...previous.settings,
-        ...(updates.settings || {}),
-      },
+  // --- CLIENTS (Clínicas e Médicas que a Camila atende) ---
+  public getClients(): ClientAccount[] {
+    return this.state.clients;
+  }
+
+  public getClientById(id: string): ClientAccount | undefined {
+    return this.state.clients.find((c) => c.id === id);
+  }
+
+  public findClientByName(nameQuery: string): ClientAccount | undefined {
+    const q = nameQuery.trim().toLowerCase();
+    if (!q) return undefined;
+    return this.state.clients.find(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.shortName.toLowerCase().includes(q) ||
+        c.doctorOrOwner.toLowerCase().includes(q) ||
+        (c.contactPerson && c.contactPerson.toLowerCase().includes(q))
+    );
+  }
+
+  public createClient(data: Partial<ClientAccount>, author = 'Camila Rocha (SDR)'): ClientAccount {
+    const newId = `cli-${Date.now().toString(36)}`;
+    const client: ClientAccount = {
+      id: newId,
+      name: data.name || 'Nova Clínica Parceira',
+      shortName: data.shortName || (data.name ? data.name.replace(/(Clínica|Clinica|Dra\.?|Dr\.?)/gi, '').trim() : 'Nova Clínica'),
+      type: data.type || 'clinica_estetica',
+      doctorOrOwner: data.doctorOrOwner || 'Profissional Responsável',
+      contactPerson: data.contactPerson,
+      phone: data.phone || '',
+      email: data.email || '',
+      address: data.address || '',
+      color: data.color || '#3B82F6',
+      badgeBg: data.badgeBg || 'bg-blue-50 text-blue-700 border-blue-200',
+      defaultFollowUpDays: data.defaultFollowUpDays || 3,
+      activeCampaigns: data.activeCampaigns || [],
+      rulesNotes: data.rulesNotes || '',
+      status: 'ativo',
+      createdAt: new Date().toISOString(),
     };
+    this.state.clients.push(client);
+    this.logAudit(
+      author,
+      'cliente',
+      client.id,
+      client.name,
+      'Cadastro de Cliente/Clínica',
+      `Cadastrada nova conta comercial: ${client.name}`
+    );
+    return client;
+  }
+
+  public updateClient(id: string, updates: Partial<ClientAccount>, author = 'Camila Rocha (SDR)'): ClientAccount | null {
+    const idx = this.state.clients.findIndex((c) => c.id === id);
+    if (idx === -1) return null;
+    const previous = { ...this.state.clients[idx] };
+    const updated = { ...previous, ...updates };
+    this.state.clients[idx] = updated;
+
+    // Se mudou o nome, propaga para pacientes, tarefas e oportunidades daquele cliente
+    if (updates.name && updates.name !== previous.name) {
+      this.state.patients.forEach((p) => {
+        if (p.clientId === id) p.clientName = updates.name;
+      });
+      this.state.opportunities.forEach((o) => {
+        if (o.clientId === id) o.clientName = updates.name;
+      });
+      this.state.tasks.forEach((t) => {
+        if (t.clientId === id) t.clientName = updates.name;
+      });
+    }
 
     this.logAudit(
       author,
-      'clinica',
-      this.state.clinic.id,
-      this.state.clinic.name,
-      'Atualização dos Dados da Clínica',
+      'cliente',
+      updated.id,
+      updated.name,
+      'Atualização de Cliente/Clínica',
       JSON.stringify(updates),
-      JSON.stringify(previous),
-      'interface_manual'
+      JSON.stringify(previous)
     );
+    return updated;
+  }
 
-    return this.state.clinic;
+  public deleteClient(id: string, author = 'Camila Rocha (SDR)'): boolean {
+    const idx = this.state.clients.findIndex((c) => c.id === id);
+    if (idx === -1) return false;
+    const client = this.state.clients[idx];
+    this.state.clients.splice(idx, 1);
+    this.state.patients = this.state.patients.filter((p) => p.clientId !== id);
+    this.state.opportunities = this.state.opportunities.filter((o) => o.clientId !== id);
+    this.state.tasks = this.state.tasks.filter((t) => t.clientId !== id);
+    this.logAudit(
+      author,
+      'cliente',
+      id,
+      client.name,
+      'Exclusão de Cliente/Clínica',
+      `Conta comercial ${client.name} excluída.`
+    );
+    return true;
+  }
+
+  // --- USER PROFILE (Camila Rocha) ---
+  public getUser(): User {
+    return this.state.currentUser;
   }
 
   public updateUser(updates: Partial<User>, author = 'Camila Rocha (SDR)'): User {
     const previous = { ...this.state.currentUser };
-    this.state.currentUser = {
-      ...previous,
-      ...updates,
-    };
-
+    this.state.currentUser = { ...previous, ...updates };
     this.logAudit(
       author,
       'usuario',
       this.state.currentUser.id,
       this.state.currentUser.name,
-      'Atualização do Perfil de Usuário',
+      'Atualização do Perfil da Usuária',
       JSON.stringify(updates),
-      JSON.stringify(previous),
-      'interface_manual'
+      JSON.stringify(previous)
     );
-
     return this.state.currentUser;
   }
 
-  // Patients
-  public getPatients() {
+  public updateClinic(updates: Partial<Clinic>, author = 'Interface Manual'): Clinic {
+    if (!this.state.clinic) {
+      this.state.clinic = { ...initialClinicFallback };
+    }
+    const previous = { ...this.state.clinic };
+    this.state.clinic = { ...this.state.clinic, ...updates };
+    this.logAudit(
+      author,
+      'cliente',
+      this.state.clinic.id,
+      this.state.clinic.name,
+      'Atualização de Configurações Retrocompatíveis',
+      JSON.stringify(updates),
+      JSON.stringify(previous)
+    );
+    return this.state.clinic;
+  }
+
+  // --- PATIENTS ---
+  public getPatients(clientId?: string): Patient[] {
+    if (clientId && clientId !== 'todos') {
+      return this.state.patients.filter((p) => p.clientId === clientId);
+    }
     return this.state.patients;
   }
 
-  public findPatientById(id: string) {
+  public findPatientById(id: string): Patient | undefined {
     return this.state.patients.find((p) => p.id === id);
   }
 
-  public findPatientByName(nameQuery: string): Patient[] {
+  public deletePatient(id: string, author = 'IA (via Chat SDR)'): boolean {
+    const idx = this.state.patients.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+    const removed = this.state.patients.splice(idx, 1)[0];
+    this.logAudit(author, 'paciente', removed.id, removed.name, 'Exclusão de Paciente', 'Paciente removido com sucesso');
+    return true;
+  }
+
+  public findPatientByName(nameQuery: string, clientId?: string): Patient[] {
     const cleanQuery = nameQuery.trim().toLowerCase();
     if (!cleanQuery) return [];
-    return this.state.patients.filter((p) =>
-      p.name.toLowerCase().includes(cleanQuery) ||
-      p.phone.replace(/\D/g, '').includes(cleanQuery.replace(/\D/g, ''))
-    );
+    const queryDigits = cleanQuery.replace(/\D/g, '');
+
+    let pool = this.state.patients;
+    if (clientId && clientId !== 'todos') {
+      pool = pool.filter((p) => p.clientId === clientId);
+    }
+
+    // 1. Exact name or word-boundary match (e.g. "Ana" matches "Ana Faria", not "Juliana")
+    const wordMatches = pool.filter((p) => {
+      const pNameLower = p.name.toLowerCase();
+      const pWords = pNameLower.split(/\s+/);
+      const matchWord = pWords.some((pw) => pw === cleanQuery || pw.startsWith(cleanQuery));
+      const matchPhone = queryDigits.length >= 4 && p.phone.replace(/\D/g, '').includes(queryDigits);
+      return matchWord || matchPhone;
+    });
+
+    if (wordMatches.length > 0) return wordMatches;
+
+    // 2. Fallback to general substring match
+    return pool.filter((p) => p.name.toLowerCase().includes(cleanQuery));
   }
 
   public createPatient(patientData: Partial<Patient>, author = 'IA (via Chat SDR)'): Patient {
     const newId = `pat-${Date.now().toString(36)}`;
     const now = new Date().toISOString();
-    const cleanPhone = (patientData.phone || '').replace(/\D/g, '');
-    const cleanWhatsapp = (patientData.whatsapp || cleanPhone).replace(/\D/g, '');
+
+    // Determina o cliente da paciente
+    let clientId = patientData.clientId || this.state.selectedClientId;
+    if (!clientId || clientId === 'todos') {
+      clientId = 'cli-camila-silva'; // Default se não especificado
+    }
+    const client = this.getClientById(clientId);
 
     const patient: Patient = {
       id: newId,
-      clinicId: this.state.clinic.id,
+      clientId,
+      clientName: client?.name || 'Clínica Camila Silva',
+      clinicId: clientId,
       name: patientData.name || 'Nova Paciente',
       phone: patientData.phone || '',
-      whatsapp: cleanWhatsapp ? (cleanWhatsapp.startsWith('55') ? cleanWhatsapp : `55${cleanWhatsapp}`) : '',
+      whatsapp: patientData.whatsapp || (patientData.phone ? patientData.phone.replace(/\D/g, '') : ''),
       email: patientData.email,
-      origin: patientData.origin || 'WhatsApp Direto',
+      birthDate: patientData.birthDate,
+      origin: patientData.origin || 'Conversa Iza',
       tags: patientData.tags || ['Novo Contato'],
       status: patientData.status || 'lead',
-      firstContactDate: now,
-      lastInteractionDate: now,
+      firstContactDate: patientData.firstContactDate || now,
+      lastInteractionDate: patientData.lastInteractionDate || now,
+      lastAppointmentDate: patientData.lastAppointmentDate,
       nextAction: patientData.nextAction,
       nextActionDate: patientData.nextActionDate,
-      commercialNotes: patientData.commercialNotes || '',
+      commercialNotes: patientData.commercialNotes,
       createdAt: now,
       updatedAt: now,
     };
@@ -616,7 +464,7 @@ class DatabaseStore {
       patient.id,
       patient.name,
       'Cadastro de Paciente',
-      `Nome: ${patient.name} | Telefone: ${patient.phone || 'N/A'}`
+      `Cliente: ${patient.clientName} | Telefone: ${patient.phone || 'Não informado'}`
     );
 
     return patient;
@@ -648,18 +496,54 @@ class DatabaseStore {
     return updated;
   }
 
-  // Opportunities
-  public getOpportunities() {
+  // --- OPPORTUNITIES ---
+  public getOpportunities(clientId?: string): Opportunity[] {
+    if (clientId && clientId !== 'todos') {
+      return this.state.opportunities.filter((o) => o.clientId === clientId);
+    }
     return this.state.opportunities;
+  }
+
+  public findOpportunityById(id: string): Opportunity | undefined {
+    return this.state.opportunities.find((o) => o.id === id);
+  }
+
+  public deleteOpportunity(id: string, author = 'IA (via Chat SDR)'): boolean {
+    const idx = this.state.opportunities.findIndex((o) => o.id === id);
+    if (idx === -1) return false;
+    const removed = this.state.opportunities.splice(idx, 1)[0];
+    this.logAudit(
+      author,
+      'oportunidade',
+      removed.id,
+      `${removed.patientName} - ${removed.procedureName}`,
+      'Exclusão de Oportunidade',
+      'Oportunidade removida'
+    );
+    return true;
   }
 
   public createOpportunity(oppData: Partial<Opportunity>, author = 'IA (via Chat SDR)'): Opportunity {
     const newId = `opp-${Date.now().toString(36)}`;
     const now = new Date().toISOString();
 
+    let clientId = oppData.clientId;
+    if (!clientId) {
+      if (oppData.patientId) {
+        const p = this.findPatientById(oppData.patientId);
+        if (p) clientId = p.clientId;
+      }
+    }
+    if (!clientId || clientId === 'todos') {
+      clientId = 'cli-camila-silva';
+    }
+    const client = this.getClientById(clientId);
+
     const opportunity: Opportunity = {
       id: newId,
-      clinicId: this.state.clinic.id,
+      clientId,
+      clientName: client?.name || oppData.clientName || 'Clínica Camila Silva',
+      clinicId: clientId,
       patientId: oppData.patientId || '',
       patientName: oppData.patientName || '',
       procedureId: oppData.procedureId,
@@ -684,9 +568,9 @@ class DatabaseStore {
       author,
       'oportunidade',
       opportunity.id,
-      `${opportunity.patientName} - ${opportunity.procedureName}`,
+      `${opportunity.patientName} - ${opportunity.procedureName} (${opportunity.clientName})`,
       'Criação de Oportunidade',
-      `Etapa: ${opportunity.stage} | Valor: R$ ${opportunity.estimatedValue || 0}`
+      `Cliente: ${opportunity.clientName} | Etapa: ${opportunity.stage} | Valor: R$ ${opportunity.estimatedValue || 0}`
     );
 
     return opportunity;
@@ -718,26 +602,51 @@ class DatabaseStore {
     return updated;
   }
 
-  // Tasks
-  public getTasks() {
+  // --- TASKS ---
+  public getTasks(clientId?: string): Task[] {
+    if (clientId && clientId !== 'todos') {
+      return this.state.tasks.filter((t) => t.clientId === clientId);
+    }
     return this.state.tasks;
+  }
+
+  public findTaskById(id: string): Task | undefined {
+    return this.state.tasks.find((t) => t.id === id);
+  }
+
+  public deleteTask(id: string, author = 'IA (via Chat SDR)'): boolean {
+    const idx = this.state.tasks.findIndex((t) => t.id === id);
+    if (idx === -1) return false;
+    const removed = this.state.tasks.splice(idx, 1)[0];
+    this.logAudit(author, 'tarefa', removed.id, removed.title, 'Exclusão de Tarefa', 'Tarefa removida');
+    return true;
   }
 
   public createTask(taskData: Partial<Task>, author = 'IA (via Chat SDR)'): Task {
     const newId = `task-${Date.now().toString(36)}`;
     const now = new Date().toISOString();
 
+    let clientId = taskData.clientId;
+    if (!clientId && taskData.patientId) {
+      const p = this.findPatientById(taskData.patientId);
+      if (p) clientId = p.clientId;
+    }
+
+    const client = clientId ? this.getClientById(clientId) : undefined;
+
     const task: Task = {
       id: newId,
       title: taskData.title || 'Nova Tarefa Comercial',
       description: taskData.description,
       responsible: taskData.responsible || this.state.currentUser.name,
+      clientId,
+      clientName: client?.name || taskData.clientName,
       patientId: taskData.patientId,
       patientName: taskData.patientName,
       opportunityId: taskData.opportunityId,
       priority: taskData.priority || 'normal',
-      category: taskData.category || 'follow-up',
-      date: taskData.date || '2026-10-04',
+      category: taskData.category || (clientId ? 'follow-up' : 'interna'),
+      date: taskData.date || new Date().toISOString().split('T')[0],
       time: taskData.time || '10:00',
       status: taskData.status || 'pendente',
       origin: taskData.origin || 'ia_chat',
@@ -752,7 +661,7 @@ class DatabaseStore {
       task.id,
       task.title,
       'Criação de Tarefa',
-      `Data: ${task.date} | Prioridade: ${task.priority}`
+      `Cliente: ${task.clientName || 'Interna'} | Data: ${task.date} | Prioridade: ${task.priority}`
     );
 
     return task;
@@ -787,7 +696,7 @@ class DatabaseStore {
     return updated;
   }
 
-  // Reminders
+  // --- REMINDERS ---
   public getReminders() {
     return this.state.reminders;
   }
@@ -797,8 +706,10 @@ class DatabaseStore {
     const reminder: Reminder = {
       id: newId,
       text: reminderData.text || '',
-      date: reminderData.date || '2026-10-04',
+      date: reminderData.date || new Date().toISOString().split('T')[0],
       time: reminderData.time || '09:00',
+      clientId: reminderData.clientId,
+      clientName: reminderData.clientName,
       patientId: reminderData.patientId,
       patientName: reminderData.patientName,
       isCompleted: false,
@@ -819,7 +730,7 @@ class DatabaseStore {
     return reminder;
   }
 
-  // Interactions
+  // --- INTERACTIONS ---
   public getInteractions(patientId?: string) {
     if (patientId) {
       return this.state.interactions.filter((i) => i.patientId === patientId);
@@ -829,9 +740,22 @@ class DatabaseStore {
 
   public createInteraction(interactionData: Partial<Interaction>): Interaction {
     const newId = `int-${Date.now().toString(36)}`;
+    let clientId = interactionData.clientId;
+    let clientName = interactionData.clientName;
+
+    if (!clientId && interactionData.patientId) {
+      const p = this.findPatientById(interactionData.patientId);
+      if (p) {
+        clientId = p.clientId;
+        clientName = p.clientName;
+      }
+    }
+
     const interaction: Interaction = {
       id: newId,
       patientId: interactionData.patientId || '',
+      clientId,
+      clientName,
       type: interactionData.type || 'observacao',
       author: interactionData.author || this.state.currentUser.name,
       origin: interactionData.origin || 'chat_ia',
@@ -843,7 +767,6 @@ class DatabaseStore {
 
     this.state.interactions.unshift(interaction);
 
-    // Also update patient's lastInteractionDate
     if (interaction.patientId) {
       const pat = this.findPatientById(interaction.patientId);
       if (pat) {
@@ -855,16 +778,17 @@ class DatabaseStore {
     return interaction;
   }
 
-  // Procedures
+  // --- PROCEDURES ---
   public getProcedures() {
     return this.state.procedures;
   }
 
-  // Global Search
-  public globalSearch(query: string) {
+  // --- GLOBAL SEARCH ---
+  public globalSearch(query: string, clientId?: string) {
     const q = query.toLowerCase().trim();
     if (!q) {
       return {
+        clients: [],
         patients: [],
         opportunities: [],
         tasks: [],
@@ -872,7 +796,24 @@ class DatabaseStore {
       };
     }
 
-    const patients = this.state.patients.filter(
+    const clients = this.state.clients.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.shortName.toLowerCase().includes(q) ||
+        c.doctorOrOwner.toLowerCase().includes(q)
+    );
+
+    let patientsPool = this.state.patients;
+    let oppsPool = this.state.opportunities;
+    let tasksPool = this.state.tasks;
+
+    if (clientId && clientId !== 'todos') {
+      patientsPool = patientsPool.filter((p) => p.clientId === clientId);
+      oppsPool = oppsPool.filter((o) => o.clientId === clientId);
+      tasksPool = tasksPool.filter((t) => t.clientId === clientId);
+    }
+
+    const patients = patientsPool.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.phone.includes(q) ||
@@ -880,7 +821,7 @@ class DatabaseStore {
         (p.commercialNotes && p.commercialNotes.toLowerCase().includes(q))
     );
 
-    const opportunities = this.state.opportunities.filter(
+    const opportunities = oppsPool.filter(
       (o) =>
         o.patientName.toLowerCase().includes(q) ||
         o.procedureName.toLowerCase().includes(q) ||
@@ -888,11 +829,12 @@ class DatabaseStore {
         (o.notes && o.notes.toLowerCase().includes(q))
     );
 
-    const tasks = this.state.tasks.filter(
+    const tasks = tasksPool.filter(
       (t) =>
         t.title.toLowerCase().includes(q) ||
         (t.description && t.description.toLowerCase().includes(q)) ||
-        (t.patientName && t.patientName.toLowerCase().includes(q))
+        (t.patientName && t.patientName.toLowerCase().includes(q)) ||
+        (t.clientName && t.clientName.toLowerCase().includes(q))
     );
 
     const procedures = this.state.procedures.filter(
@@ -903,6 +845,7 @@ class DatabaseStore {
     );
 
     return {
+      clients,
       patients,
       opportunities,
       tasks,

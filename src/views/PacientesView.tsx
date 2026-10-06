@@ -18,13 +18,16 @@ interface PacientesViewProps {
 }
 
 export const PacientesView: React.FC<PacientesViewProps> = ({ onOpenNewPatientModal }) => {
-  const { state, setSelectedPatientId } = useCRM();
+  const { state, setSelectedPatientId, selectedClientId, setSelectedClientId } = useCRM();
   const [filterStatus, setFilterStatus] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   if (!state) return null;
 
+  const selectedClient = state.clients.find((c) => c.id === selectedClientId);
+
   const filteredPatients = state.patients.filter((p) => {
+    const matchesClient = selectedClientId === 'todos' || p.clientId === selectedClientId;
     const matchesStatus = filterStatus === 'todos' || p.status === filterStatus;
     const term = searchTerm.toLowerCase().trim();
     const matchesSearch =
@@ -32,8 +35,9 @@ export const PacientesView: React.FC<PacientesViewProps> = ({ onOpenNewPatientMo
       p.name.toLowerCase().includes(term) ||
       p.phone.includes(term) ||
       p.origin.toLowerCase().includes(term) ||
+      (p.clientName && p.clientName.toLowerCase().includes(term)) ||
       p.tags.some((t) => t.toLowerCase().includes(term));
-    return matchesStatus && matchesSearch;
+    return matchesClient && matchesStatus && matchesSearch;
   });
 
   return (
@@ -42,17 +46,17 @@ export const PacientesView: React.FC<PacientesViewProps> = ({ onOpenNewPatientMo
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
           <h2 className="text-xl font-bold text-[#0F2042] font-display">
-            Diretório de Pacientes
+            Diretório de Pacientes & Leads
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            {state.patients.length} pacientes registradas na {state.clinic.name}
+            {filteredPatients.length} pacientes {selectedClient ? `cadastradas na ${selectedClient.name}` : `em todas as ${state.clients.length} clínicas parceiras`}
           </p>
         </div>
 
         {onOpenNewPatientModal && (
           <button
             onClick={onOpenNewPatientModal}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0F2042] hover:bg-[#1A365D] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors shrink-0"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-[#0F2042] hover:bg-[#1A365D] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors w-full sm:w-auto shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Cadastrar Paciente</span>
@@ -121,11 +125,16 @@ export const PacientesView: React.FC<PacientesViewProps> = ({ onOpenNewPatientMo
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-sm sm:text-base font-bold text-slate-900 font-display truncate group-hover:text-blue-900">
                           {patient.name}
                         </h3>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded text-blue-900 bg-blue-50 border border-blue-100 uppercase shrink-0">
+                        {patient.clientName && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded text-blue-800 bg-blue-50 border border-blue-200 shrink-0">
+                            {patient.clientName}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded text-slate-700 bg-slate-100 border border-slate-200 uppercase shrink-0">
                           {patient.status.replace('_', ' ')}
                         </span>
                       </div>

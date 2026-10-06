@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
+import { getSystemDateStrings, formatDateBR } from '../utils/dateUtils';
 import {
   Clock,
   CheckCircle2,
@@ -9,20 +10,25 @@ import {
   AlertCircle,
   ArrowRight,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
 
 export const FollowUpsView: React.FC = () => {
-  const { state, completeTask, setSelectedPatientId, setActiveView } = useCRM();
+  const { state, completeTask, setSelectedPatientId, setActiveView, selectedClientId, sendChatMessage } = useCRM();
   const [activeTab, setActiveTab] = useState<'hoje' | 'amanha' | 'semana' | 'atrasados' | 'todos'>('hoje');
 
   if (!state) return null;
 
-  const todayStr = '2026-10-04';
-  const tomorrowStr = '2026-10-05';
-  const nextWeekStr = '2026-10-11';
+  const { todayStr, tomorrowStr, nextWeekStr } = getSystemDateStrings();
+
+  const selectedClient = state.clients.find((c) => c.id === selectedClientId);
 
   // Gather follow-ups from tasks and opportunities
-  const allFollowUps = state.tasks.filter((t) => t.category === 'follow-up' || t.title.toLowerCase().includes('follow-up') || t.title.toLowerCase().includes('retornar'));
+  const allFollowUps = state.tasks.filter((t) => {
+    const matchesClient = selectedClientId === 'todos' || t.clientId === selectedClientId;
+    const isFollowUp = t.category === 'follow-up' || t.title.toLowerCase().includes('follow-up') || t.title.toLowerCase().includes('retornar');
+    return matchesClient && isFollowUp;
+  });
 
   const filteredFollowUps = allFollowUps.filter((f) => {
     if (activeTab === 'hoje') return f.date === todayStr && f.status !== 'concluida';
@@ -45,7 +51,7 @@ export const FollowUpsView: React.FC = () => {
             Central de Follow-ups Comerciais
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Cadência de retorno e acompanhamento de decisões das pacientes
+            {selectedClient ? `Follow-ups da ${selectedClient.name}` : `Cadência de retorno em todas as ${state.clients.length} clínicas parceiras`}
           </p>
         </div>
 
@@ -60,8 +66,8 @@ export const FollowUpsView: React.FC = () => {
       {/* Tabs */}
       <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-1 overflow-x-auto">
         {[
-          { id: 'hoje', label: 'Hoje' },
-          { id: 'amanha', label: 'Amanhã' },
+          { id: 'hoje', label: `Hoje (${formatDateBR(todayStr).slice(0, 5)})` },
+          { id: 'amanha', label: `Amanhã (${formatDateBR(tomorrowStr).slice(0, 5)})` },
           { id: 'semana', label: 'Próximos 7 Dias' },
           { id: 'atrasados', label: `Atrasados (${lateCount})` },
           { id: 'todos', label: 'Todos os Follow-ups' },
@@ -105,20 +111,33 @@ export const FollowUpsView: React.FC = () => {
                     <span className="text-sm font-bold text-slate-900 font-display">
                       {item.patientName || item.title}
                     </span>
-                    {opp && (
-                      <span className="text-xs font-semibold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                        {opp.procedureName} (R$ {opp.estimatedValue || 0})
-                      </span>
-                    )}
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                        item.status === 'atrasada'
-                          ? 'text-rose-700 bg-rose-50 border border-rose-200'
-                          : 'text-amber-700 bg-amber-50 border border-amber-200'
-                      }`}
-                    >
-                      {item.status}
+                    <span className="text-slate-300">·</span>
+                    <span className="text-xs text-slate-600 font-medium">
+                      {item.clientName || 'Clínica Parceira'}
                     </span>
+                    {opp && (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-xs text-slate-700 font-medium">
+                          {opp.procedureName} · R$ {opp.estimatedValue?.toLocaleString('pt-BR') || 0}
+                        </span>
+                      </>
+                    )}
+                    {item.status === 'atrasada' ? (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-[11px] font-bold text-rose-600">
+                          Atrasado
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-[11px] text-amber-700 font-medium">
+                          Pendente
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
@@ -142,7 +161,7 @@ export const FollowUpsView: React.FC = () => {
                             patient.name.split(' ')[0]
                           )}!%20Tudo%20bem?%20Aqui%20%C3%A9%20a%20${encodeURIComponent(
                             state.currentUser?.name?.split(' ')[0] || 'Camila'
-                          )}%20da%20${encodeURIComponent(state.clinic?.name || 'Roones CRM')}.`}
+                          )}%20da%20${encodeURIComponent(patient?.clientName || item.clientName || 'nossa clínica')}.`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-emerald-700 font-semibold hover:underline flex items-center gap-1"
@@ -171,14 +190,28 @@ export const FollowUpsView: React.FC = () => {
                 </div>
 
                 {/* Right Action buttons */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                  <button
+                    onClick={() => {
+                      sendChatMessage(
+                        `Iza, redija uma mensagem persuasiva e consultiva de follow-up para a paciente ${patient?.name || item.patientName || 'nossa paciente'} sobre: "${item.description || item.title}" da conta ${patient?.clientName || item.clientName || 'clínica vinculada'}.`
+                      );
+                      setActiveView('chat');
+                    }}
+                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    title="Pedir redação inteligente à Iza"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-blue-800" />
+                    <span>Redigir com Iza</span>
+                  </button>
+
                   {item.status !== 'concluida' ? (
                     <button
                       onClick={() => completeTask(item.id)}
                       className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Concluir Follow-up</span>
+                      <span>Concluir</span>
                     </button>
                   ) : (
                     <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl">

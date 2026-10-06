@@ -1,406 +1,499 @@
 import React, { useState, useEffect } from 'react';
 import { useCRM } from '../context/CRMContext';
 import {
-  Settings,
-  Building2,
+  User,
   ShieldCheck,
   History,
   RotateCcw,
   Sparkles,
   CheckCircle2,
-  DollarSign,
   Save,
   Check,
+  Building2,
+  ArrowRight,
+  Sliders,
+  SlidersHorizontal,
+  Bell,
+  MessageSquare,
+  Clock,
+  Database,
+  Trash2,
 } from 'lucide-react';
 
 export const ConfigView: React.FC = () => {
-  const { state, resetDatabase, updateClinic } = useCRM();
-  const [activeTab, setActiveTab] = useState<'clinica' | 'procedimentos' | 'automacoes' | 'auditoria'>('clinica');
+  const { state, resetDatabase, clearDatabase, updateUser, setActiveView } = useCRM();
+  const [activeTab, setActiveTab] = useState<'minha-conta' | 'parametros-iza' | 'auditoria' | 'sistema'>('minha-conta');
   const [isResetting, setIsResetting] = useState(false);
 
-  // Clinic edit state
-  const [clinicName, setClinicName] = useState('');
-  const [clinicPhone, setClinicPhone] = useState('');
-  const [clinicEmail, setClinicEmail] = useState('');
-  const [clinicAddress, setClinicAddress] = useState('');
-  const [clinicTimezone, setClinicTimezone] = useState('');
-  const [defaultFollowUpDays, setDefaultFollowUpDays] = useState(3);
-  const [requireNextAction, setRequireNextAction] = useState(true);
-  const [isSavingClinic, setIsSavingClinic] = useState(false);
-  const [clinicSavedMessage, setClinicSavedMessage] = useState(false);
+  // User Profile state
+  const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState<'SDR Comercial Multiclínicas' | 'Gestora de Atendimento' | 'Consultora Comercial'>('SDR Comercial Multiclínicas');
+  const [userEmail, setUserEmail] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [dailyGoal, setDailyGoal] = useState(25);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [userSavedMessage, setUserSavedMessage] = useState(false);
+
+  // Iza Parameters state
+  const [aiTone, setAiTone] = useState<'consultivo' | 'persuasivo' | 'direto'>('consultivo');
+  const [autoSdrRules, setAutoSdrRules] = useState(true);
+  const [notifyLateFollowUps, setNotifyLateFollowUps] = useState(true);
+  const [aiSavedMessage, setAiSavedMessage] = useState(false);
 
   useEffect(() => {
-    if (state?.clinic) {
-      setClinicName(state.clinic.name);
-      setClinicPhone(state.clinic.phone);
-      setClinicEmail(state.clinic.email);
-      setClinicAddress(state.clinic.address);
-      setClinicTimezone(state.clinic.timezone);
-      setDefaultFollowUpDays(state.clinic.settings?.defaultFollowUpDays || 3);
-      setRequireNextAction(state.clinic.settings?.requireNextActionOnOpportunity ?? true);
+    if (state?.currentUser) {
+      setUserName(state.currentUser.name);
+      setUserRole(state.currentUser.role);
+      setUserEmail(state.currentUser.email);
+      setUserPhone(state.currentUser.phone || '');
     }
-  }, [state?.clinic]);
+  }, [state?.currentUser]);
 
   if (!state) return null;
 
-  const handleSaveClinic = async (e: React.FormEvent) => {
+  const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSavingClinic(true);
+    setIsSavingUser(true);
     try {
-      await updateClinic({
-        name: clinicName.trim(),
-        phone: clinicPhone.trim(),
-        email: clinicEmail.trim(),
-        address: clinicAddress.trim(),
-        timezone: clinicTimezone.trim(),
-        settings: {
-          autoNextActionAlert: state.clinic.settings?.autoNextActionAlert ?? true,
-          defaultFollowUpDays: Number(defaultFollowUpDays) || 3,
-          requireNextActionOnOpportunity: requireNextAction,
-        },
+      await updateUser({
+        name: userName.trim(),
+        role: userRole,
+        email: userEmail.trim(),
+        phone: userPhone.trim(),
       });
-      setClinicSavedMessage(true);
-      setTimeout(() => setClinicSavedMessage(false), 3000);
+      setUserSavedMessage(true);
+      setTimeout(() => setUserSavedMessage(false), 3000);
     } catch (err) {
-      console.error('Failed to update clinic:', err);
+      console.error('Failed to update user:', err);
     } finally {
-      setIsSavingClinic(false);
+      setIsSavingUser(false);
+    }
+  };
+
+  const handleSaveIzaParams = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAiSavedMessage(true);
+    setTimeout(() => setAiSavedMessage(false), 3000);
+  };
+
+  const handleClearAll = async () => {
+    if (
+      confirm(
+        'Deseja apagar todos os registros (pacientes, tarefas, oportunidades, follow-ups e histórico) para começar a utilizar o sistema limpo com seus dados reais?'
+      )
+    ) {
+      setIsResetting(true);
+      await clearDatabase();
+      setIsResetting(false);
     }
   };
 
   const handleReset = async () => {
-    if (confirm('Deseja restaurar todos os dados da clínica para os valores padrão de demonstração?')) {
+    if (confirm('Deseja reiniciar a base para o estado inicial limpo?')) {
       setIsResetting(true);
       await resetDatabase();
       setIsResetting(false);
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
   return (
-    <div className="space-y-5 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Top Banner */}
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-blue-900 tracking-wide uppercase mb-1">
-            <Settings className="w-3.5 h-3.5 text-blue-800" />
-            <span>Painel Administrativo</span>
+            <SlidersHorizontal className="w-3.5 h-3.5 text-blue-800" />
+            <span>Preferências & Sistema</span>
           </div>
-          <h2 className="text-xl font-bold text-[#0F2042] font-display">
-            Configurações do Roones CRM
+          <h2 className="text-xl sm:text-2xl font-bold text-[#0F2042] font-display">
+            Configurações & Minha Conta
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Gerencie e edite os dados cadastrais da clínica, procedimentos e regras comerciais
+            Gerencie seu perfil de operadora comercial, parâmetros de inteligência da Iza e registros de auditoria.
           </p>
         </div>
 
         <button
-          onClick={handleReset}
+          onClick={handleClearAll}
           disabled={isResetting}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors shrink-0 self-start sm:self-auto"
+          title="Zerar todos os registros para iniciar o uso real"
         >
-          <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
-          <span>Restaurar Base Demo</span>
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Zerar Dados Fictícios</span>
+        </button>
+      </div>
+
+      {/* Helpful banner pointing to Clientes view */}
+      <div className="p-4 bg-blue-50/70 border border-blue-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-blue-950 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-blue-900 text-white flex items-center justify-center shrink-0">
+            <Building2 className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-xs sm:text-sm font-bold">
+              Precisa gerenciar suas clínicas parceiras e regras comerciais?
+            </div>
+            <div className="text-[11px] text-blue-800 mt-0.5">
+              O cadastro de novas clínicas, regras de follow-up por cliente e campanhas ativas ficam centralizados na aba <strong>Clientes</strong>.
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => setActiveView('clientes')}
+          className="px-3.5 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-semibold shrink-0 transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-xs"
+        >
+          <span>Ir para Clientes ({state.clients.length})</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto">
-        {[
-          { id: 'clinica', label: 'Dados da Clínica' },
-          { id: 'procedimentos', label: 'Procedimentos & Preços' },
-          { id: 'automacoes', label: 'Regras de Automação' },
-          { id: 'auditoria', label: `Histórico & Auditoria (${state.auditLogs.length})` },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-3.5 py-2 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'bg-white text-slate-900 shadow-xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="bg-white p-2 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-1 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('minha-conta')}
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
+            activeTab === 'minha-conta'
+              ? 'bg-[#0F2042] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>Meu Perfil (Camila Rocha · SDR)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('parametros-iza')}
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
+            activeTab === 'parametros-iza'
+              ? 'bg-[#0F2042] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-blue-400" />
+          <span>Parâmetros da Assistente Iza</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('auditoria')}
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
+            activeTab === 'auditoria'
+              ? 'bg-[#0F2042] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>Auditoria Operacional da IA ({state.auditLogs.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('sistema')}
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
+            activeTab === 'sistema'
+              ? 'bg-[#0F2042] text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          <span>Sistema & Dados</span>
+        </button>
       </div>
 
-      {/* TAB 1: DADOS DA CLÍNICA (EDITABLE) */}
-      {activeTab === 'clinica' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-6">
-          <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+      {/* Tab 1: Minha Conta */}
+      {activeTab === 'minha-conta' && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+          <form onSubmit={handleSaveUser} className="space-y-4 max-w-xl text-xs">
             <div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#0F2042]" />
-                <h3 className="text-base font-bold text-[#0F2042] font-display">
-                  Informações Cadastrais da Clínica
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Altere a identificação da clínica, contatos oficiais e regras comerciais padrão.
-              </p>
-            </div>
-
-            {clinicSavedMessage && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-semibold animate-in fade-in">
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span>Dados da clínica salvos!</span>
-              </div>
-            )}
-          </div>
-
-          <form onSubmit={handleSaveClinic} className="space-y-4 text-xs">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Nome da Clinica */}
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Nome da Clínica / Razão Comercial *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={clinicName}
-                  onChange={(e) => setClinicName(e.target.value)}
-                  placeholder="Ex: Roones Clínica de Estética"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-900 focus:bg-white text-xs sm:text-sm"
-                />
-              </div>
-
-              {/* Telefone Comercial */}
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Telefone / WhatsApp Comercial *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={clinicPhone}
-                  onChange={(e) => setClinicPhone(e.target.value)}
-                  placeholder="Ex: (11) 3280-9900"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-900 focus:bg-white text-xs sm:text-sm"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Email de Contato Comercial *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={clinicEmail}
-                  onChange={(e) => setClinicEmail(e.target.value)}
-                  placeholder="Ex: comercial@roonesclinica.com.br"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-900 focus:bg-white text-xs sm:text-sm"
-                />
-              </div>
-
-              {/* Fuso Horario */}
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Fuso Horário
-                </label>
-                <select
-                  value={clinicTimezone}
-                  onChange={(e) => setClinicTimezone(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-900 focus:bg-white text-xs sm:text-sm"
-                >
-                  <option value="America/Sao_Paulo">Horário de Brasília (America/Sao_Paulo)</option>
-                  <option value="America/Manaus">Amazonas (America/Manaus)</option>
-                  <option value="America/Cuiaba">Mato Grosso (America/Cuiaba)</option>
-                  <option value="America/Fortaleza">Nordeste (America/Fortaleza)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Endereco */}
-            <div>
-              <label className="font-semibold text-slate-700 block mb-1">
-                Endereço Completo da Clínica
-              </label>
+              <label className="font-semibold text-slate-700 block mb-1">Seu Nome Completo *</label>
               <input
                 type="text"
-                value={clinicAddress}
-                onChange={(e) => setClinicAddress(e.target.value)}
-                placeholder="Ex: Av. Brigadeiro Faria Lima, 2800 - Itaim Bibi, São Paulo - SP"
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-900 focus:bg-white text-xs sm:text-sm"
+                required
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-900 text-xs"
               />
             </div>
 
-            {/* Commercial settings */}
-            <div className="pt-2 border-t border-slate-100 space-y-3">
-              <h4 className="font-bold text-slate-900 text-xs">Regras Comerciais da Clínica</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Prazo Padrão de Follow-up (dias)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={60}
-                    value={defaultFollowUpDays}
-                    onChange={(e) => setDefaultFollowUpDays(Number(e.target.value))}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800"
-                  />
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Intervalo sugerido após envio de orçamentos ou propostas.
-                  </p>
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Cargo / Função *</label>
+                <select
+                  value={userRole}
+                  onChange={(e) => setUserRole(e.target.value as any)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs font-medium"
+                >
+                  <option value="SDR Comercial Multiclínicas">SDR Comercial Multiclínicas</option>
+                  <option value="Gestora de Atendimento">Gestora de Atendimento</option>
+                  <option value="Consultora Comercial">Consultora Comercial</option>
+                </select>
+              </div>
 
-                <div className="flex items-center gap-3 pt-4 sm:pt-6">
-                  <input
-                    type="checkbox"
-                    id="requireNextAction"
-                    checked={requireNextAction}
-                    onChange={(e) => setRequireNextAction(e.target.checked)}
-                    className="w-4 h-4 text-blue-900 rounded focus:ring-blue-900"
-                  />
-                  <label htmlFor="requireNextAction" className="font-medium text-slate-700 cursor-pointer">
-                    Exigir próxima ação em todas as oportunidades abertas (Regra SDR)
-                  </label>
-                </div>
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Telefone / WhatsApp Profissional</label>
+                <input
+                  type="text"
+                  value={userPhone}
+                  onChange={(e) => setUserPhone(e.target.value)}
+                  placeholder="(11) 98765-4321"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs"
+                />
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Email de Acesso</label>
+              <input
+                type="email"
+                required
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">
+                Meta Diária de Contatos Comerciais
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min="5"
+                  max="100"
+                  value={dailyGoal}
+                  onChange={(e) => setDailyGoal(Number(e.target.value))}
+                  className="w-24 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-bold text-xs"
+                />
+                <span className="text-[11px] text-slate-500">
+                  follow-ups e contatos distribuídos entre todas as suas clínicas ativas
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
               <button
                 type="submit"
-                disabled={isSavingClinic}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#0F2042] hover:bg-[#1A365D] text-white font-semibold rounded-xl text-xs sm:text-sm shadow-xs transition-colors disabled:opacity-50"
+                disabled={isSavingUser}
+                className="px-5 py-2.5 bg-[#0F2042] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
-                <span>{isSavingClinic ? 'Salvando...' : 'Salvar Dados da Clínica'}</span>
+                <span>{isSavingUser ? 'Salvando...' : 'Salvar Meu Perfil'}</span>
               </button>
+
+              {userSavedMessage && (
+                <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5 animate-in fade-in">
+                  <Check className="w-4 h-4" />
+                  Perfil atualizado com sucesso!
+                </span>
+              )}
             </div>
           </form>
         </div>
       )}
 
-      {/* Tab 2: Procedimentos */}
-      {activeTab === 'procedimentos' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-slate-200/80 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 font-display">
-              Procedimentos e Protocolos Cadastrados
-            </h3>
-            <span className="text-xs text-slate-500">
-              {state.procedures.length} procedimentos ativos
-            </span>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {state.procedures.map((proc) => (
-              <div key={proc.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-900 font-display">
-                      {proc.name}
-                    </span>
-                    <span className="text-[10px] font-semibold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                      {proc.category}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                    {proc.commercialDescription}
-                  </p>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="text-xs text-slate-400 block">Preço de Referência:</span>
-                  <span className="text-sm font-bold text-slate-900">
-                    {formatCurrency(proc.referencePrice)}
-                  </span>
-                </div>
+      {/* Tab 2: Parâmetros da Iza */}
+      {activeTab === 'parametros-iza' && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+          <form onSubmit={handleSaveIzaParams} className="space-y-5 max-w-xl text-xs">
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1.5">
+                Tom de Voz das Mensagens Sugeridas pela Iza
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {[
+                  {
+                    id: 'consultivo',
+                    title: 'Consultivo & Acolhedor',
+                    desc: 'Prioriza escuta ativa, empatia e saúde estética (padrão médico).',
+                  },
+                  {
+                    id: 'persuasivo',
+                    title: 'Persuasivo & Comercial',
+                    desc: 'Foco em fechamento rápido de avaliação e gatilhos de escassez.',
+                  },
+                  {
+                    id: 'direto',
+                    title: 'Rápido & Direto',
+                    desc: 'Mensagens objetivas para pacientes com rotina corrida.',
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setAiTone(item.id as any)}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      aiTone === item.id
+                        ? 'border-blue-900 bg-blue-50/70 ring-1 ring-blue-900'
+                        : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
+                    }`}
+                  >
+                    <div className="font-bold text-slate-900 text-xs mb-1">{item.title}</div>
+                    <div className="text-[11px] text-slate-500 leading-snug">{item.desc}</div>
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
 
-      {/* Tab 3: Automacoes */}
-      {activeTab === 'automacoes' && (
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 text-sm font-bold text-[#0F2042] font-display">
-            <ShieldCheck className="w-4 h-4 text-blue-800" />
-            <span>Motor de Automações Comerciais</span>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              {
-                title: 'Alerta de Oportunidade sem Próxima Ação',
-                desc: 'Se uma oportunidade estiver aberta sem data de retorno cadastrada, sinalizar no Meu Dia e no Pipeline.',
-                active: true,
-              },
-              {
-                title: 'Follow-up Automático em 3 Dias',
-                desc: 'Após apresentação de orçamento ou proposta, sugerir follow-up comercial em até 72 horas.',
-                active: true,
-              },
-              {
-                title: 'Radar de Reativação (+120 dias)',
-                desc: 'Identificar pacientes cujo último atendimento excedeu 120 dias e sugerir abordagem personalizada no WhatsApp.',
-                active: true,
-              },
-              {
-                title: 'Auditoria Integral de Alterações',
-                desc: 'Registrar todas as ações executadas pela IA ou usuária para transparência completa do histórico.',
-                active: true,
-              },
-            ].map((rule, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoSdrRules}
+                  onChange={(e) => setAutoSdrRules(e.target.checked)}
+                  className="mt-0.5 rounded text-blue-900 focus:ring-blue-900"
+                />
                 <div>
-                  <div className="text-xs font-bold text-slate-900">{rule.title}</div>
-                  <p className="text-xs text-slate-500 mt-0.5">{rule.desc}</p>
+                  <div className="font-semibold text-slate-800">
+                    Regra Anti-Esquecimento (SDR Proativa)
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    A Iza avisa sempre que uma oportunidade estiver sem próxima ação cadastrada.
+                  </div>
                 </div>
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                  Ativa
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={notifyLateFollowUps}
+                  onChange={(e) => setNotifyLateFollowUps(e.target.checked)}
+                  className="mt-0.5 rounded text-blue-900 focus:ring-blue-900"
+                />
+                <div>
+                  <div className="font-semibold text-slate-800">
+                    Alertas de SLA de Follow-up por Clínica
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Respeita os prazos definidos por cliente (ex: 3 dias na Camila Silva, 5 dias na Face Doctor).
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-[#0F2042] hover:bg-[#1A365D] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>Salvar Parâmetros da Iza</span>
+              </button>
+
+              {aiSavedMessage && (
+                <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5 animate-in fade-in">
+                  <Check className="w-4 h-4" />
+                  Parâmetros salvos com sucesso!
                 </span>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Tab 3: Auditoria Operacional */}
+      {activeTab === 'auditoria' && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 font-display">
+                Trilha de Auditoria das Ações da Iza & Operação
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Transparência completa de todas as tarefas, movimentações de pipeline e registros de pacientes.
+              </p>
+            </div>
+            <span className="text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1 rounded-lg">
+              {state.auditLogs.length} Registros
+            </span>
+          </div>
+
+          <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+            {state.auditLogs.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400">
+                Nenhum log de auditoria registrado ainda.
               </div>
-            ))}
+            ) : (
+              state.auditLogs.map((log) => (
+                <div key={log.id} className="p-3.5 hover:bg-slate-50/80 transition-colors flex items-start justify-between gap-3 text-xs">
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-slate-900 font-display">
+                        {log.entityName}: {log.newValue || log.action}
+                      </span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded uppercase bg-slate-100 text-slate-700">
+                        {log.action}
+                      </span>
+                      {log.entityType && (
+                        <span className="text-[10px] text-slate-400">
+                          ({log.entityType})
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                      <span>Autor: {log.author}</span>
+                      <span>·</span>
+                      <span>{new Date(log.timestamp).toLocaleString('pt-BR')}</span>
+                    </div>
+                  </div>
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
 
-      {/* Tab 4: Auditoria */}
-      {activeTab === 'auditoria' && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+      {/* Tab 4: Sistema & Dados */}
+      {activeTab === 'sistema' && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-5 text-xs">
+          <div>
             <h3 className="text-sm font-bold text-slate-900 font-display">
-              Trilha de Auditoria e Histórico de Alterações
+              Status do Ambiente & Banco de Dados
             </h3>
-            <span className="text-xs text-slate-500">
-              Registrado pela Iza e Usuário
-            </span>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Informações técnicas e manutenção da base operacional.
+            </p>
           </div>
 
-          <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
-            {state.auditLogs.map((log) => (
-              <div key={log.id} className="p-3.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900">{log.action}</span>
-                    <span className="text-slate-500">· {log.entityName}</span>
-                    <span className="text-[10px] text-blue-900 bg-blue-50 px-1.5 py-0.5 rounded">
-                      {log.author}
-                    </span>
-                  </div>
-                  <p className="text-slate-600 mt-0.5 font-mono text-[11px] truncate max-w-xl">
-                    {log.newValue}
-                  </p>
-                </div>
-
-                <div className="text-right text-[11px] text-slate-400 shrink-0">
-                  {new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="text-slate-500 font-medium">Clínicas Registradas</div>
+              <div className="text-xl font-bold text-slate-900 font-display mt-1">
+                {state.clients.length} contas
               </div>
-            ))}
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="text-slate-500 font-medium">Pacientes na Base</div>
+              <div className="text-xl font-bold text-slate-900 font-display mt-1">
+                {state.patients.length} cadastros
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="text-slate-500 font-medium">Tarefas & Follow-ups</div>
+              <div className="text-xl font-bold text-slate-900 font-display mt-1">
+                {state.tasks.length} registros
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="font-semibold text-slate-900">Zerar Base para Produção Real</div>
+              <div className="text-slate-500 text-[11px] mt-0.5">
+                Apaga todos os pacientes, tarefas e oportunidades de teste para iniciar o CRM limpo.
+              </div>
+            </div>
+
+            <button
+              onClick={handleClearAll}
+              disabled={isResetting}
+              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-xl font-semibold transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <Trash2 className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
+              <span>{isResetting ? 'Limpando...' : 'Zerar Dados Fictícios'}</span>
+            </button>
           </div>
         </div>
       )}

@@ -11,43 +11,95 @@ import {
   User,
   Plus,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 
 interface StageColumn {
   id: PipelineStage;
   title: string;
+  criterion: string;
   badgeColor?: string;
 }
 
 export const STAGES: StageColumn[] = [
-  { id: 'novo_interesse', title: 'Novo Interesse' },
-  { id: 'primeiro_contato', title: 'Primeiro Contato' },
-  { id: 'qualificacao', title: 'Qualificação' },
-  { id: 'agendamento', title: 'Agendamento' },
-  { id: 'compareceu', title: 'Compareceu' },
-  { id: 'proposta', title: 'Proposta / Orçamento' },
-  { id: 'aguardando_decisao', title: 'Aguardando Decisão' },
-  { id: 'follow_up', title: 'Follow-up' },
-  { id: 'fechado', title: 'Fechado (Ganho)' },
-  { id: 'perdido', title: 'Perdido' },
-  { id: 'reativacao', title: 'Reativação' },
+  {
+    id: 'novo_interesse',
+    title: 'Novo Interesse',
+    criterion: 'Lead novo. Realizar primeiro contato em menos de 15 minutos.',
+  },
+  {
+    id: 'primeiro_contato',
+    title: 'Primeiro Contato',
+    criterion: 'Contato feito. Identificar dor estética e procedimento pretendido.',
+  },
+  {
+    id: 'qualificacao',
+    title: 'Qualificação',
+    criterion: 'Critério: Lead confirmou interesse e disponibilidade para consulta.',
+  },
+  {
+    id: 'agendamento',
+    title: 'Agendamento',
+    criterion: 'Critério: Data e horário de avaliação pré-fixados na agenda.',
+  },
+  {
+    id: 'compareceu',
+    title: 'Compareceu',
+    criterion: 'Critério: Paciente esteve presente na consulta presencial.',
+  },
+  {
+    id: 'proposta',
+    title: 'Proposta / Orçamento',
+    criterion: 'Critério: Plano de tratamento e valores apresentados à paciente.',
+  },
+  {
+    id: 'aguardando_decisao',
+    title: 'Aguardando Decisão',
+    criterion: 'Critério: Orçamento em análise. Follow-up programado em até 48h.',
+  },
+  {
+    id: 'follow_up',
+    title: 'Follow-up',
+    criterion: 'Critério: Contorno de objeções de preço, tempo ou forma de pagamento.',
+  },
+  {
+    id: 'fechado',
+    title: 'Fechado (Ganho)',
+    criterion: 'Critério: Procedimento contratado, sinal recebido ou início agendado.',
+  },
+  {
+    id: 'perdido',
+    title: 'Perdido',
+    criterion: 'Critério: Desistência definitiva ou sem condições no momento.',
+  },
+  {
+    id: 'reativacao',
+    title: 'Reativação',
+    criterion: 'Critério: Mais de 15 dias sem retorno; encaminhado para fluxo de resgate.',
+  },
 ];
 
 export const PipelineView: React.FC = () => {
-  const { state, moveOpportunityStage, setSelectedPatientId, setActiveView } = useCRM();
+  const { state, moveOpportunityStage, setSelectedPatientId, setActiveView, selectedClientId, sendChatMessage } = useCRM();
   const [selectedStageFilter, setSelectedStageFilter] = useState<string>('all');
 
   if (!state) return null;
 
-  const totalValueInPipeline = state.opportunities
+  const selectedClient = state.clients.find((c) => c.id === selectedClientId);
+
+  const poolOpps = selectedClientId === 'todos'
+    ? state.opportunities
+    : state.opportunities.filter((o) => o.clientId === selectedClientId);
+
+  const totalValueInPipeline = poolOpps
     .filter((o) => o.stage !== 'fechado' && o.stage !== 'perdido')
     .reduce((acc, curr) => acc + (curr.estimatedValue || 0), 0);
 
-  const closedValue = state.opportunities
+  const closedValue = poolOpps
     .filter((o) => o.stage === 'fechado')
     .reduce((acc, curr) => acc + (curr.estimatedValue || 0), 0);
 
-  const oppsWithoutNextAction = state.opportunities.filter(
+  const oppsWithoutNextAction = poolOpps.filter(
     (o) => !o.nextAction && o.stage !== 'fechado' && o.stage !== 'perdido'
   );
 
@@ -69,7 +121,7 @@ export const PipelineView: React.FC = () => {
             Pipeline Comercial
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Gestão visual das oportunidades e estágios de decisão das pacientes
+            {selectedClient ? `Oportunidades da ${selectedClient.name}` : `Gestão consolidada em todas as ${state.clients.length} clínicas parceiras`}
           </p>
         </div>
 
@@ -101,7 +153,7 @@ export const PipelineView: React.FC = () => {
       <div className="overflow-x-auto pb-4 pt-1">
         <div className="flex gap-4 min-w-[1500px]">
           {STAGES.map((col) => {
-            const oppsInStage = state.opportunities.filter((o) => o.stage === col.id);
+            const oppsInStage = poolOpps.filter((o) => o.stage === col.id);
             const stageTotal = oppsInStage.reduce((acc, curr) => acc + (curr.estimatedValue || 0), 0);
 
             return (
@@ -109,27 +161,35 @@ export const PipelineView: React.FC = () => {
                 key={col.id}
                 className="w-76 shrink-0 bg-slate-100/70 rounded-2xl p-3 border border-slate-200/70 flex flex-col max-h-[75vh]"
               >
-                {/* Column Header */}
-                <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-800 font-display truncate">
-                      {col.title}
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                      {oppsInStage.length}
+                {/* Column Header with Didactic Criterion */}
+                <div className="pb-2.5 mb-2.5 border-b border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-slate-800 font-display truncate">
+                        {col.title}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-600 bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                        {oppsInStage.length}
+                      </span>
+                    </div>
+
+                    <span className="text-[11px] font-medium text-slate-500">
+                      {formatCurrency(stageTotal)}
                     </span>
                   </div>
-
-                  <span className="text-[11px] font-medium text-slate-500">
-                    {formatCurrency(stageTotal)}
-                  </span>
+                  <div className="text-[10px] text-slate-500 font-normal line-clamp-1 mt-1" title={col.criterion}>
+                    {col.criterion}
+                  </div>
                 </div>
 
                 {/* Column Cards */}
                 <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5">
                   {oppsInStage.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-slate-400">
-                      Nenhuma oportunidade
+                    <div className="py-6 px-3 text-center rounded-xl bg-white/60 border border-dashed border-slate-200/90 space-y-1.5 my-2">
+                      <div className="text-[11px] font-semibold text-slate-600">Sem oportunidades</div>
+                      <div className="text-[10px] text-slate-400 leading-tight">
+                        {col.criterion}
+                      </div>
                     </div>
                   ) : (
                     oppsInStage.map((opp) => {
@@ -145,17 +205,23 @@ export const PipelineView: React.FC = () => {
                           {/* Card Title & Value */}
                           <div className="flex items-start justify-between gap-1">
                             <div className="min-w-0">
-                              <button
-                                onClick={() => {
-                                  if (opp.patientId) {
-                                    setSelectedPatientId(opp.patientId);
-                                    setActiveView('pacientes');
-                                  }
-                                }}
-                                className="text-xs font-bold text-slate-900 hover:text-blue-900 truncate block text-left font-display"
-                              >
-                                {opp.patientName}
-                              </button>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <button
+                                  onClick={() => {
+                                    if (opp.patientId) {
+                                      setSelectedPatientId(opp.patientId);
+                                      setActiveView('pacientes');
+                                    }
+                                  }}
+                                  className="text-xs font-bold text-slate-900 hover:text-blue-900 truncate block text-left font-display"
+                                >
+                                  {opp.patientName}
+                                </button>
+                                <span className="text-slate-300">·</span>
+                                <span className="text-[11px] text-slate-500 font-medium">
+                                  {opp.clientName || 'Clínica'}
+                                </span>
+                              </div>
                               <div className="text-xs text-slate-600 mt-0.5 truncate">
                                 {opp.procedureName}
                               </div>
@@ -168,8 +234,20 @@ export const PipelineView: React.FC = () => {
 
                           {/* Interest or Objection */}
                           {opp.objection ? (
-                            <div className="text-[11px] text-rose-700 bg-rose-50/60 p-1.5 rounded border border-rose-100">
-                              <span className="font-semibold">Objeção:</span> {opp.objection}
+                            <div className="text-[11px] text-rose-700 bg-rose-50/60 p-2 rounded-lg border border-rose-100 space-y-1">
+                              <div>
+                                <span className="font-semibold">Objeção:</span> {opp.objection}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  sendChatMessage(`Iza, a paciente ${opp.patientName} (${opp.clientName || 'nossa clínica parceira'}) apresentou a objeção: "${opp.objection}". Como contornar isso com elegância e persuasão para fechar o procedimento de ${opp.procedureName}?`);
+                                  setActiveView('chat');
+                                }}
+                                className="text-[10px] text-rose-800 font-bold hover:underline flex items-center gap-1"
+                              >
+                                <Sparkles className="w-2.5 h-2.5 text-rose-600" />
+                                <span>Iza: Como contornar esta objeção?</span>
+                              </button>
                             </div>
                           ) : opp.interest ? (
                             <div className="text-[11px] text-slate-500 truncate">
@@ -199,6 +277,19 @@ export const PipelineView: React.FC = () => {
                               <div className="text-[10px] text-blue-900 font-semibold mt-0.5">
                                 Prazo: {new Date(opp.nextActionDate).toLocaleDateString()}
                               </div>
+                            )}
+
+                            {hasNoNextAction && (
+                              <button
+                                onClick={() => {
+                                  sendChatMessage(`Iza, qual a melhor próxima ação para a oportunidade de ${opp.procedureName} da paciente ${opp.patientName} (${opp.clientName || 'clínica vinculada'})?`);
+                                  setActiveView('chat');
+                                }}
+                                className="w-full mt-1.5 py-1 px-2 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded font-semibold text-[10px] flex items-center justify-center gap-1 transition-colors"
+                              >
+                                <Sparkles className="w-3 h-3 text-amber-700" />
+                                <span>Sugerir Próxima Ação com Iza</span>
+                              </button>
                             )}
                           </div>
 
