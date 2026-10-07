@@ -15,6 +15,7 @@ import { ConfigView } from './views/ConfigView';
 import { PatientDetailModal } from './components/PatientDetailModal';
 import { NewTaskModal } from './components/NewTaskModal';
 import { NewPatientModal } from './components/NewPatientModal';
+import { PWAInstallButton } from './components/PWAInstallButton';
 
 const AppContent: React.FC = () => {
   const { activeView, selectedPatientId, setSelectedPatientId, loading, error } = useCRM();
@@ -46,8 +47,8 @@ const AppContent: React.FC = () => {
         <main
           className={`flex-1 ${
             activeView === 'chat'
-              ? 'p-2 sm:p-4 lg:p-6 pb-20 md:pb-6 flex flex-col min-h-0 overflow-hidden'
-              : 'p-3 sm:p-6 lg:p-8 pb-24 md:pb-8 overflow-y-auto'
+              ? 'p-2 sm:p-4 lg:p-6 pb-[max(5rem,calc(env(safe-area-inset-bottom)+4.5rem))] md:pb-6 flex flex-col min-h-0 overflow-hidden'
+              : 'p-3 sm:p-6 lg:p-8 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] md:pb-8 overflow-y-auto'
           }`}
         >
           {error && (
@@ -104,6 +105,9 @@ const AppContent: React.FC = () => {
       {isNewPatientModalOpen && (
         <NewPatientModal onClose={() => setIsNewPatientModalOpen(false)} />
       )}
+
+      {/* Floating Mobile Web PWA Install Banner */}
+      <PWAInstallButton variant="mobile-banner" />
     </div>
   );
 };

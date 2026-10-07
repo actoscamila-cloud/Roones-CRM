@@ -17,6 +17,8 @@ import {
   deleteClientAPI,
   updateClinicAPI,
   updateUserAPI,
+  fetchChatHistoryAPI,
+  clearChatHistoryAPI,
 } from '../services/api';
 
 export type ActiveView =
@@ -31,12 +33,20 @@ export type ActiveView =
   | 'relatorios'
   | 'config';
 
+export type SyncStatus = 'synced' | 'syncing' | 'offline' | 'error';
+
 export interface CRMContextType {
   state: CRMState | null;
   loading: boolean;
   error: string | null;
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
+
+  // Sincronização & Persistência
+  syncStatus: SyncStatus;
+  lastSyncTime: Date | null;
+  forceSync: () => Promise<void>;
+  clearChat: () => Promise<void>;
 
   // ==========================================
   // CLIENTES (ENTIDADES DE NÍVEL SUPERIOR)
@@ -109,47 +119,157 @@ export interface CRMContextType {
 
 const CRMContext = createContext<CRMContextType | undefined>(undefined);
 
+const CACHE_KEY_STATE = 'roones_crm_state_v2';
+const CACHE_KEY_CHAT = 'roones_crm_chat_v2';
+
+function getCachedState(): CRMState | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_STATE);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedState(state: CRMState | null) {
+  try {
+    if (state) localStorage.setItem(CACHE_KEY_STATE, JSON.stringify(state));
+  } catch {}
+}
+
+function getCachedChat(): ChatMessage[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_CHAT);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedChat(messages: ChatMessage[]) {
+  try {
+    localStorage.setItem(CACHE_KEY_CHAT, JSON.stringify(messages));
+  } catch {}
+}
+
 export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<CRMState | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [state, setState] = useState<CRMState | null>(() => getCachedState());
+  const [loading, setLoading] = useState<boolean>(() => !getCachedState());
   const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>('meu-dia');
   const [selectedClientId, setSelectedClientId] = useState<string>('todos');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isChatProcessing, setIsChatProcessing] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date());
 
-  // Initial welcome message from AI
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: 'msg-welcome',
-      sender: 'assistant',
-      text: 'Olá Camila! Sou a Iza, sua assistente operacional comercial do CRM. Estou conectada às suas clínicas e pronta para operar seus atendimentos, cadastrar pacientes, criar tarefas, registrar follow-ups e movimentar pipelines em tempo real.',
-      timestamp: new Date().toISOString(),
-      suggestedPrompts: [
-        'Quem eu preciso chamar hoje?',
-        'Cadastrar nova paciente e agendar retorno',
-        'Quais oportunidades estão sem próxima ação?',
-        'Criar uma tarefa comercial para hoje',
-      ],
-    },
-  ]);
+  // Chat messages with local cache fallback
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    const cached = getCachedChat();
+    if (cached && cached.length > 0) return cached;
+    return [
+      {
+        id: 'msg-welcome',
+        sender: 'assistant',
+        text: 'Olá Camila! Sou a Iza, sua assistente operacional comercial do CRM. Estou conectada às suas clínicas e pronta para operar seus atendimentos, cadastrar pacientes, criar tarefas, registrar follow-ups e movimentar pipelines em tempo real.',
+        timestamp: new Date().toISOString(),
+        suggestedPrompts: [
+          'Quem eu preciso chamar hoje?',
+          'Cadastrar nova paciente e agendar retorno',
+          'Quais oportunidades estão sem próxima ação?',
+          'Criar uma tarefa comercial para hoje',
+        ],
+      },
+    ];
+  });
 
-  const refreshState = useCallback(async () => {
+  // Keep local storage in sync
+  useEffect(() => {
+    if (state) {
+      setCachedState(state);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (chatMessages && chatMessages.length > 0) {
+      setCachedChat(chatMessages);
+    }
+  }, [chatMessages]);
+
+  const refreshState = useCallback(async (silent = false) => {
+    if (!silent) setSyncStatus('syncing');
     try {
-      const data = await fetchCRMState();
+      const [data, chatData] = await Promise.all([
+        fetchCRMState(),
+        fetchChatHistoryAPI().catch(() => null),
+      ]);
       setState(data);
+      setCachedState(data);
+      if (chatData && chatData.length > 0) {
+        setChatMessages(chatData);
+        setCachedChat(chatData);
+      }
       setError(null);
+      setSyncStatus('synced');
+      setLastSyncTime(new Date());
     } catch (err: any) {
       console.error('Error fetching CRM state:', err);
-      setError(err.message || 'Erro ao carregar dados');
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        setSyncStatus('offline');
+      } else {
+        setSyncStatus('error');
+      }
+      if (!silent) {
+        setError(err.message || 'Erro ao carregar dados');
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Periodic Polling & Window Focus Auto-Sync (Across different tabs and mobile/desktop browsers)
   useEffect(() => {
     refreshState();
+
+    const handleFocus = () => {
+      refreshState(true);
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refreshState(true);
+      }
+    };
+
+    const handleOnline = () => {
+      setSyncStatus('syncing');
+      refreshState(false);
+    };
+
+    const handleOffline = () => {
+      setSyncStatus('offline');
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Heartbeat sync every 12 seconds when active
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && (typeof navigator === 'undefined' || navigator.onLine)) {
+        refreshState(true);
+      }
+    }, 12000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
   }, [refreshState]);
 
   // ==========================================
@@ -537,6 +657,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setChatMessages((prev) => [...prev, newUserMsg]);
       setIsChatProcessing(true);
+      setSyncStatus('syncing');
 
       try {
         const history = chatMessages.slice(-6).map((m) => ({
@@ -549,11 +670,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           history,
           imageBase64,
           undefined,
-          selectedClientId !== 'todos' ? selectedClientId : undefined
+          selectedClientId !== 'todos' ? selectedClientId : undefined,
+          newUserMsg
         );
 
         if (response.success && response.data) {
-          const aiMsg: ChatMessage = {
+          const aiMsg: ChatMessage = response.assistantMessage || {
             id: `msg-ai-${Date.now()}`,
             sender: 'assistant',
             text: response.data.reply,
@@ -568,9 +690,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           if (response.updatedState) {
             setState(response.updatedState);
+            setCachedState(response.updatedState);
           } else {
-            await refreshState();
+            await refreshState(true);
           }
+          setSyncStatus('synced');
+          setLastSyncTime(new Date());
         }
       } catch (err: any) {
         console.error('Error in sendChatMessage:', err);
@@ -581,6 +706,7 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           timestamp: new Date().toISOString(),
         };
         setChatMessages((prev) => [...prev, errorMsg]);
+        setSyncStatus('error');
       } finally {
         setIsChatProcessing(false);
       }
@@ -606,26 +732,32 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetDatabase = useCallback(async () => {
     setLoading(true);
+    setSyncStatus('syncing');
     try {
       const fresh = await resetCRMDatabase();
+      await clearChatHistoryAPI().catch(() => {});
       setState(fresh);
+      setCachedState(fresh);
       setSelectedClientId('todos');
-      setChatMessages([
-        {
-          id: `msg-reset-${Date.now()}`,
-          sender: 'assistant',
-          text: 'Banco de dados restaurado para o estado limpo inicial. Tudo pronto para novos atendimentos reais!',
-          timestamp: new Date().toISOString(),
-          suggestedPrompts: [
-            'Quem eu preciso chamar hoje?',
-            'Cadastrar nova paciente e agendar retorno',
-            'Quais oportunidades estão sem próxima ação?',
-            'Criar uma tarefa comercial para hoje',
-          ],
-        },
-      ]);
+      const resetMsg: ChatMessage = {
+        id: `msg-reset-${Date.now()}`,
+        sender: 'assistant',
+        text: 'Banco de dados restaurado para o estado limpo inicial. Tudo pronto para novos atendimentos reais!',
+        timestamp: new Date().toISOString(),
+        suggestedPrompts: [
+          'Quem eu preciso chamar hoje?',
+          'Cadastrar nova paciente e agendar retorno',
+          'Quais oportunidades estão sem próxima ação?',
+          'Criar uma tarefa comercial para hoje',
+        ],
+      };
+      setChatMessages([resetMsg]);
+      setCachedChat([resetMsg]);
+      setSyncStatus('synced');
+      setLastSyncTime(new Date());
     } catch (err) {
       console.error('Failed to reset db:', err);
+      setSyncStatus('error');
     } finally {
       setLoading(false);
     }
@@ -633,30 +765,62 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearDatabase = useCallback(async () => {
     setLoading(true);
+    setSyncStatus('syncing');
     try {
       const fresh = await clearCRMDatabase();
+      await clearChatHistoryAPI().catch(() => {});
       setState(fresh);
+      setCachedState(fresh);
       setSelectedClientId('todos');
-      setChatMessages([
-        {
-          id: `msg-clear-${Date.now()}`,
-          sender: 'assistant',
-          text: 'Base de dados limpa com sucesso! Todos os registros fictícios foram removidos. O CRM está 100% pronto para a operação real das suas clínicas.',
-          timestamp: new Date().toISOString(),
-          suggestedPrompts: [
-            'Quem eu preciso chamar hoje?',
-            'Cadastrar nova paciente e agendar retorno',
-            'Quais oportunidades estão sem próxima ação?',
-            'Criar uma tarefa comercial para hoje',
-          ],
-        },
-      ]);
+      const clearMsg: ChatMessage = {
+        id: `msg-clear-${Date.now()}`,
+        sender: 'assistant',
+        text: 'Base de dados limpa com sucesso! Todos os registros fictícios foram removidos. O CRM está 100% pronto para a operação real das suas clínicas.',
+        timestamp: new Date().toISOString(),
+        suggestedPrompts: [
+          'Quem eu preciso chamar hoje?',
+          'Cadastrar nova paciente e agendar retorno',
+          'Quais oportunidades estão sem próxima ação?',
+          'Criar uma tarefa comercial para hoje',
+        ],
+      };
+      setChatMessages([clearMsg]);
+      setCachedChat([clearMsg]);
+      setSyncStatus('synced');
+      setLastSyncTime(new Date());
     } catch (err) {
       console.error('Failed to clear db:', err);
+      setSyncStatus('error');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const clearChat = useCallback(async () => {
+    try {
+      await clearChatHistoryAPI();
+      const welcome: ChatMessage = {
+        id: `msg-welcome-${Date.now()}`,
+        sender: 'assistant',
+        text: 'Histórico de conversa reiniciado. Como posso te ajudar na operação comercial agora?',
+        timestamp: new Date().toISOString(),
+        suggestedPrompts: [
+          'Quem eu preciso chamar hoje?',
+          'Cadastrar nova paciente e agendar retorno',
+          'Quais oportunidades estão sem próxima ação?',
+          'Criar uma tarefa comercial para hoje',
+        ],
+      };
+      setChatMessages([welcome]);
+      setCachedChat([welcome]);
+    } catch (err) {
+      console.error('Erro ao limpar chat:', err);
+    }
+  }, []);
+
+  const forceSync = useCallback(async () => {
+    await refreshState(false);
+  }, [refreshState]);
 
   return (
     <CRMContext.Provider
@@ -666,6 +830,12 @@ export const CRMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         error,
         activeView,
         setActiveView,
+
+        // Sincronização & Persistência
+        syncStatus,
+        lastSyncTime,
+        forceSync,
+        clearChat,
 
         // Clientes
         clients,

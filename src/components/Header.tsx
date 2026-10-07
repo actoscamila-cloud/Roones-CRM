@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
 import { getSystemDateStrings } from '../utils/dateUtils';
+import { PWAInstallButton } from './PWAInstallButton';
+import { SyncIndicator } from './SyncIndicator';
 import {
   Sparkles,
   Search,
@@ -151,7 +153,13 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Quick Actions & User Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Cloud Sync Status Indicator */}
+            <SyncIndicator />
+
+            {/* In-App PWA Install Button */}
+            <PWAInstallButton variant="header" />
+
             {/* Mobile Search Icon */}
             <button
               onClick={() => setShowSearchModal(true)}

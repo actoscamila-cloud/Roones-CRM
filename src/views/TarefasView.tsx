@@ -35,7 +35,12 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
     const matchesClient =
       selectedClientId === 'todos' ||
       t.clientId === selectedClientId ||
-      (!t.clientId && (t.category === 'interna' || categoryFilter === 'interna'));
+      (selectedClient && t.clientName && (
+        t.clientName.toLowerCase().includes(selectedClient.shortName.toLowerCase()) ||
+        selectedClient.name.toLowerCase().includes(t.clientName.toLowerCase()) ||
+        t.clientName.toLowerCase().includes(selectedClient.name.toLowerCase())
+      )) ||
+      (!t.clientId && !t.clientName && (t.category === 'interna' || categoryFilter === 'interna'));
 
     // 1. Tab date/status filtering
     let matchesTab = true;
@@ -62,30 +67,29 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
     return matchesClient && matchesTab && matchesCategory && matchesPriority;
   });
 
+  const clientMatchHelper = (t: Task) =>
+    selectedClientId === 'todos' ||
+    t.clientId === selectedClientId ||
+    (selectedClient && t.clientName && (
+      t.clientName.toLowerCase().includes(selectedClient.shortName.toLowerCase()) ||
+      selectedClient.name.toLowerCase().includes(t.clientName.toLowerCase())
+    )) ||
+    (!t.clientId && !t.clientName);
+
   const lateCount = state.tasks.filter(
-    (t) =>
-      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
-      (t.status === 'atrasada' || (t.date < todayStr && t.status !== 'concluida'))
+    (t) => clientMatchHelper(t) && (t.status === 'atrasada' || (t.date < todayStr && t.status !== 'concluida'))
   ).length;
 
   const todayCount = state.tasks.filter(
-    (t) =>
-      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
-      t.date === todayStr &&
-      t.status !== 'concluida'
+    (t) => clientMatchHelper(t) && t.date === todayStr && t.status !== 'concluida'
   ).length;
 
   const tomorrowCount = state.tasks.filter(
-    (t) =>
-      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
-      t.date === tomorrowStr &&
-      t.status !== 'concluida'
+    (t) => clientMatchHelper(t) && t.date === tomorrowStr && t.status !== 'concluida'
   ).length;
 
   const allPendingCount = state.tasks.filter(
-    (t) =>
-      (selectedClientId === 'todos' || t.clientId === selectedClientId || !t.clientId) &&
-      t.status !== 'concluida'
+    (t) => clientMatchHelper(t) && t.status !== 'concluida'
   ).length;
 
   const getPriorityStyle = (p: TaskPriority) => {
@@ -189,12 +193,36 @@ export const TarefasView: React.FC<TarefasViewProps> = ({ onOpenNewTaskModal }) 
 
       {/* Task List */}
       {filteredTasks.length === 0 ? (
-        <div className="py-12 bg-white rounded-2xl border border-slate-200 text-center p-6 space-y-2">
-          <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-          <p className="text-sm font-semibold text-slate-700">Nenhuma tarefa nesta categoria.</p>
-          <p className="text-xs text-slate-400">
-            Você está em dia com esta lista de atividades!
+        <div className="py-12 bg-white rounded-2xl border border-slate-200 text-center p-6 space-y-3">
+          <CheckCircle2 className="w-9 h-9 text-emerald-500 mx-auto" />
+          <p className="text-sm font-semibold text-slate-800">
+            {tabFilter === 'hoje'
+              ? 'Nenhuma tarefa pendente para hoje.'
+              : 'Nenhuma tarefa nesta categoria.'}
           </p>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            {tabFilter === 'hoje' && tomorrowCount > 0
+              ? `Você tem ${tomorrowCount} tarefa(s) agendada(s) para amanhã e ${allPendingCount} tarefa(s) ativas no total.`
+              : 'Você está em dia com esta lista de atividades!'}
+          </p>
+          <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+            {tabFilter !== 'amanha' && tomorrowCount > 0 && (
+              <button
+                onClick={() => setTabFilter('amanha')}
+                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-semibold rounded-lg transition-colors"
+              >
+                Ver Tarefas de Amanhã ({tomorrowCount})
+              </button>
+            )}
+            {tabFilter !== 'todas' && allPendingCount > 0 && (
+              <button
+                onClick={() => setTabFilter('todas')}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded-lg transition-colors"
+              >
+                Ver Todas as Tarefas Ativas ({allPendingCount})
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

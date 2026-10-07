@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCRM, ActiveView } from '../context/CRMContext';
 import { getSystemDateStrings } from '../utils/dateUtils';
+import { PWAInstallButton } from './PWAInstallButton';
 import {
   Calendar,
   Sparkles,
@@ -215,6 +216,11 @@ export const Navigation: React.FC = () => {
           </div>
         </div>
 
+        {/* PWA Install in Desktop Sidebar */}
+        <div className="pt-2">
+          <PWAInstallButton variant="sidebar" />
+        </div>
+
         {/* Bottom helper */}
         <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
           <span>Roones CRM</span>
@@ -223,7 +229,7 @@ export const Navigation: React.FC = () => {
       </aside>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 py-1.5 flex items-center justify-around shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg">
         {/* Meu Dia */}
         <button
           onClick={() => setActiveView('meu-dia')}
@@ -349,6 +355,11 @@ export const Navigation: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* In-App PWA Install Option in Mobile Drawer */}
+            <div className="pt-2 border-t border-slate-100">
+              <PWAInstallButton variant="menu-item" />
             </div>
           </div>
         </div>

@@ -85,42 +85,43 @@ export function parseRelativeDate(text: string, referenceDateStr?: string): stri
     const reg = new RegExp(`\\b${mName}\\b(?:\\s*(?:de\\s*)?(\\d{4}))?`, 'i');
     const m = lower.match(reg);
     if (m) {
-      const year = m[1] || '2026';
-      return `${year}-${mNum}-04`;
+      const year = m[1] || refDate.getFullYear().toString();
+      return `${year}-${mNum}-15`;
     }
   }
 
-  if (lower.includes('segunda') || lower.includes('05/10') || lower.includes('5/10')) return '2026-10-05';
-  if (lower.includes('terça') || lower.includes('terca') || lower.includes('06/10') || lower.includes('6/10')) return '2026-10-06';
-  if (lower.includes('quarta') || lower.includes('07/10') || lower.includes('7/10')) return '2026-10-07';
-  if (lower.includes('quinta') || lower.includes('08/10') || lower.includes('8/10')) return '2026-10-08';
-  if (lower.includes('sexta') || lower.includes('09/10') || lower.includes('9/10')) return '2026-10-09';
-  if (lower.includes('sábado') || lower.includes('sabado') || lower.includes('10/10')) return '2026-10-10';
-  if (lower.includes('depois do dia 15') || lower.includes('após o dia 15')) return '2026-10-16';
-  if (lower.includes('depois do dia 10') || lower.includes('após o dia 10')) return '2026-10-11';
+  if (lower.includes('depois do dia 15') || lower.includes('após o dia 15')) {
+    const d = new Date(refDate);
+    d.setDate(16);
+    return d.toISOString().split('T')[0];
+  }
   if (lower.includes('daqui 15 dias') || lower.includes('duas semanas') || lower.includes('2 semanas')) {
     const d = new Date(refDate);
     d.setDate(d.getDate() + 15);
-    return d.toISOString().split('T')[0]; // 2026-10-19
+    return d.toISOString().split('T')[0];
   }
-  if (lower.includes('daqui 7 dias') || lower.includes('semana que vem')) {
+  if (lower.includes('daqui 7 dias') || lower.includes('semana que vem') || lower.includes('próxima semana')) {
     const d = new Date(refDate);
     d.setDate(d.getDate() + 7);
-    return d.toISOString().split('T')[0]; // 2026-10-11
+    return d.toISOString().split('T')[0];
   }
   if (lower.includes('mês que vem') || lower.includes('mes que vem') || lower.includes('próximo mês')) {
-    return '2026-11-04';
+    const d = new Date(refDate);
+    d.setMonth(d.getMonth() + 1);
+    return d.toISOString().split('T')[0];
   }
 
   const dateMatch = text.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
   if (dateMatch) {
     const day = dateMatch[1].padStart(2, '0');
     const month = dateMatch[2].padStart(2, '0');
-    const year = dateMatch[3] ? (dateMatch[3].length === 2 ? `20${dateMatch[3]}` : dateMatch[3]) : '2026';
+    const year = dateMatch[3] ? (dateMatch[3].length === 2 ? `20${dateMatch[3]}` : dateMatch[3]) : refDate.getFullYear().toString();
     return `${year}-${month}-${day}`;
   }
 
-  return '2026-10-05';
+  const defaultTom = new Date(refDate);
+  defaultTom.setDate(defaultTom.getDate() + 1);
+  return defaultTom.toISOString().split('T')[0];
 }
 
 /**
@@ -1226,7 +1227,11 @@ export async function processUserMessage(
   imageMimeType?: string,
   activeClientId?: string
 ): Promise<AIResponse> {
-  const todayStr = '2026-10-04';
+  const { todayStr, tomorrowStr, nextWeekStr } = getSystemDateStrings();
+  const twoM = new Date(`${todayStr}T12:00:00.000Z`);
+  twoM.setMonth(twoM.getMonth() + 2);
+  const twoMonthsStr = twoM.toISOString().split('T')[0];
+  const retoqueDate = '2027-02-15';
 
   if (!isKeyValid) {
     return runOperatorAgent(userMessage, conversationHistory, todayStr, activeClientId);
@@ -1245,19 +1250,19 @@ Você é a Iza, ASSISTENTE OPERACIONAL PESSOAL e executora direta do CRM da usu�
 A Camila atende múltiplas clínicas parceiras:
 ${clientsContext}${activeClientNote}
 
-DATA DE REFERÊNCIA DO CRM: ${todayStr} (04 de Outubro de 2026).
-- Hoje: 2026-10-04
-- Amanhã: 2026-10-05
-- Daqui a 2 meses: 2026-12-04
-- Fevereiro de 2027: 2027-02-04
+DATA DE REFERÊNCIA DO CRM: ${todayStr}.
+- Hoje: ${todayStr}
+- Amanhã: ${tomorrowStr}
+- Daqui a 2 meses: ${twoMonthsStr}
+- Fevereiro de 2027: ${retoqueDate}
 
 CRÍTICO / REGRA OPERACIONAL FUNDAMENTAL:
 1. Você NÃO é apenas um chatbot conversacional. Você é a EXECUTORA REAL do CRM.
 2. Quando o usuário pede para adicionar, cadastrar, agendar, criar lembretes, registrar tarefas, marcar procedimentos ou atualizar dados, VOCÊ DEVE OBRIGATORIAMENTE CHAMAR AS FERRAMENTAS DO CRM (functionCalls).
 3. NUNCA responda apenas dizendo "feito" ou confirmando em texto sem ter chamado a ferramenta correspondente.
 4. MÚLTIPLAS AÇÕES: Se a mensagem contiver múltiplos pedidos (exemplo: cadastrar nova cliente + agendar lembrete em 2 meses + agendar retoque em fevereiro de 2027), EMITA TODAS AS FERRAMENTAS NECESSÁRIAS (createPatient, createFollowUp, createTask) em uma única resposta!
-5. Se o usuário pedir um lembrete para uma clínica (ex: "Face Doctor", "Thayline"), crie a tarefa com createTask ou createFollowUp com o clientName correspondente, date e título claros.
-6. Se o usuário fornecer dados de uma nova cliente/paciente (nome, telefone, clínica, procedimento), use createPatient e programe os follow-ups / lembretes solicitados.
+5. Se o usuário pedir um lembrete para uma clínica (ex: "Face Doctor", "Thayline"), crie a tarefa com createTask com clientName correspondente, date="${tomorrowStr}" (se for amanhã) e título claro.
+6. Se o usuário fornecer dados de uma nova cliente/paciente (nome, telefone, clínica, procedimento realizado), use createPatient com status="ativo" e procedureName correspondente, crie o follow-up de 2 meses (${twoMonthsStr}) e o lembrete de retoque (${retoqueDate}).
 7. Se for uma tarefa interna da Camila (sem clínica vinculada), use createTask com clientName vazio e category="interna".
 `;
 

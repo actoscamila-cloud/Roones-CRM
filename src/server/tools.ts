@@ -1,6 +1,7 @@
 import { FunctionDeclaration, Type } from '@google/genai';
 import { db } from './store';
 import { ChatActionExecution, Patient, Opportunity, Task, Interaction, ClientAccount } from '../types/crm';
+import { getSystemDateStrings } from '../utils/dateUtils';
 
 export interface ToolResult {
   success: boolean;
@@ -146,6 +147,8 @@ export const crmTools = {
       commercialNotes?: string;
       nextAction?: string;
       nextActionDate?: string;
+      status?: import('../types/crm').PatientStatus;
+      procedureName?: string;
     },
     author = 'Iza (Assistente Virtual)'
   ): ToolResult => {
@@ -183,6 +186,7 @@ export const crmTools = {
     }
 
     const formattedPhone = args.phone ? formatBrazilianPhone(args.phone) : '';
+    const initialStatus = args.status || (args.procedureName ? 'ativo' : 'lead');
 
     const patient = db.createPatient(
       {
@@ -192,18 +196,45 @@ export const crmTools = {
         clientId: client.id,
         clientName: client.name,
         origin: args.origin || 'Conversa com Iza (SDR)',
-        tags: args.tags && args.tags.length > 0 ? args.tags : ['Novo Contato', client.shortName],
-        status: 'lead',
-        commercialNotes: args.commercialNotes || '',
+        tags: args.tags && args.tags.length > 0 ? args.tags : ['Novo Contato', client.shortName, ...(args.procedureName ? [args.procedureName] : [])],
+        status: initialStatus,
+        commercialNotes: args.commercialNotes || (args.procedureName ? `Procedimento realizado: ${args.procedureName}` : ''),
         nextAction: args.nextAction,
         nextActionDate: args.nextActionDate,
       },
       author
     );
 
+    // Se realizou procedimento, registra a movimentação completa do fluxo
+    if (args.procedureName) {
+      db.createInteraction({
+        patientId: patient.id,
+        clientId: client.id,
+        clientName: client.name,
+        type: 'procedimento',
+        author,
+        origin: 'chat_ia',
+        content: `Procedimento realizado hoje: ${args.procedureName}.${patient.phone ? ` Telefone: ${patient.phone}.` : ''}`,
+      });
+
+      db.createOpportunity({
+        patientId: patient.id,
+        patientName: patient.name,
+        clientId: client.id,
+        clientName: client.name,
+        procedureName: args.procedureName,
+        stage: 'fechado',
+        estimatedValue: 1800,
+        proposedValue: 1800,
+        interest: args.procedureName,
+        nextAction: args.nextAction || 'Follow-up de acompanhamento',
+        nextActionDate: args.nextActionDate,
+      });
+    }
+
     const actionExecuted: ChatActionExecution = {
       type: 'Cadastro de Paciente',
-      description: `Cadastrada paciente: ${patient.name}${patient.phone ? ` (${patient.phone})` : ''} para ${client.name}.`,
+      description: `Cadastrada paciente: ${patient.name}${patient.phone ? ` (${patient.phone})` : ''} para ${client.name}.${args.procedureName ? ` Procedimento: ${args.procedureName}.` : ''}`,
       entityType: 'paciente',
       entityId: patient.id,
       entityName: patient.name,
@@ -212,7 +243,7 @@ export const crmTools = {
 
     return {
       success: true,
-      message: `Paciente ${patient.name} cadastrada com sucesso para a ${client.name}.`,
+      message: `Paciente ${patient.name} cadastrada com sucesso para a ${client.name}.${args.procedureName ? ` Registrado procedimento de ${args.procedureName}.` : ''}`,
       data: patient,
       actionExecuted,
     };
@@ -390,7 +421,7 @@ export const crmTools = {
       {
         title: args.title,
         description: args.description,
-        date: args.date || '2026-10-04',
+        date: args.date || getSystemDateStrings().todayStr,
         time: args.time || '10:00',
         priority: args.priority || 'normal',
         category: isInternal ? 'interna' : (args.category || 'comercial'),
@@ -827,7 +858,7 @@ export const crmTools = {
    * 12. getTodayTasks: Consulta tarefas por data e por cliente (ou geral de todas as clínicas)
    */
   getTodayTasks: (args: { date?: string; clientName?: string }): ToolResult => {
-    const targetDate = args.date || '2026-10-04';
+    const targetDate = args.date || getSystemDateStrings().todayStr;
 
     let targetClientId: string | undefined;
     let clientAccount: ClientAccount | undefined;
@@ -850,7 +881,7 @@ export const crmTools = {
    * 13. getOverdueTasks: Consulta tarefas atrasadas filtradas ou consolidadas
    */
   getOverdueTasks: (args?: { clientName?: string }): ToolResult => {
-    const todayStr = '2026-10-04';
+    const todayStr = getSystemDateStrings().todayStr;
     let targetClientId: string | undefined;
     if (args?.clientName) {
       const cl = db.findClientByName(args.clientName);
@@ -992,14 +1023,16 @@ export const crmTools = {
 export const crmFunctionDeclarations: FunctionDeclaration[] = [
   {
     name: 'createPatient',
-    description: 'Cadastra novo paciente. Pode vincular à clínica/cliente indicada (ex: Camila Silva, Face Doctor, Thayline).',
+    description: 'Cadastra novo paciente. Pode vincular à clínica/cliente indicada (ex: Camila Silva, Face Doctor, Thayline). Se informar procedureName, já registra o procedimento e a oportunidade.',
     parameters: {
       type: Type.OBJECT,
       properties: {
         name: { type: Type.STRING, description: 'Nome completo do paciente' },
         phone: { type: Type.STRING, description: 'Telefone com DDD' },
         clientName: { type: Type.STRING, description: 'Nome da clínica ou cliente atendida (ex: Clínica Camila Silva, Face Doctor, Dra. Thayline)' },
-        origin: { type: Type.STRING, description: 'Origem do lead' },
+        origin: { type: Type.STRING, description: 'Origem do lead ou contato' },
+        status: { type: Type.STRING, description: 'Status do paciente (lead, ativo, em_contato, agendado)' },
+        procedureName: { type: Type.STRING, description: 'Nome do procedimento realizado (ex: Botox, Ultraformer III, Sculptra)' },
         nextAction: { type: Type.STRING, description: 'Próxima ação' },
         nextActionDate: { type: Type.STRING, description: 'Data da próxima ação (YYYY-MM-DD)' },
       },

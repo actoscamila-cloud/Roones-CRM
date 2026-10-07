@@ -1,0 +1,136 @@
+{
+  "currentUser": {
+    "id": "user-camila-01",
+    "name": "Camila Rocha",
+    "role": "SDR Comercial Multiclínicas",
+    "email": "camila.sdr@gmail.com",
+    "phone": "(11) 99887-1122",
+    "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+  },
+  "clients": [
+    {
+      "id": "cli-camila-silva",
+      "name": "Clínica Camila Silva",
+      "shortName": "Camila Silva",
+      "type": "clinica_estetica",
+      "doctorOrOwner": "Dra. Camila Silva",
+      "phone": "(11) 99120-4400",
+      "email": "contato@clinicacamilasilva.com.br",
+      "address": "Alameda Santos, 1200 - Jardins, São Paulo - SP",
+      "color": "#2563EB",
+      "badgeBg": "bg-blue-50 text-blue-700 border-blue-200",
+      "defaultFollowUpDays": 3,
+      "activeCampaigns": [],
+      "rulesNotes": "Prazo padrão de follow-up: 3 dias.",
+      "status": "ativo",
+      "createdAt": "2026-01-15T08:00:00.000Z"
+    },
+    {
+      "id": "cli-facedoctor",
+      "name": "Clínica Face Doctor Parque Prado",
+      "shortName": "Face Doctor",
+      "type": "franquia",
+      "doctorOrOwner": "Dra. Augusta / Face Doctor",
+      "contactPerson": "Augusta (Gerente)",
+      "phone": "(19) 3271-8899",
+      "email": "parqueprado@facedoctor.com.br",
+      "address": "Shopping Parque Prado, Loja 45 - Campinas - SP",
+      "color": "#7C3AED",
+      "badgeBg": "bg-purple-50 text-purple-700 border-purple-200",
+      "defaultFollowUpDays": 5,
+      "activeCampaigns": [],
+      "rulesNotes": "Prazo padrão de follow-up: 5 dias.",
+      "status": "ativo",
+      "createdAt": "2026-02-01T09:00:00.000Z"
+    },
+    {
+      "id": "cli-thayline",
+      "name": "Clínica Dra. Thayline Sara",
+      "shortName": "Dra. Thayline",
+      "type": "consultorio_medico",
+      "doctorOrOwner": "Dra. Thayline Sara",
+      "phone": "(11) 98770-5522",
+      "email": "atendimento@drathaylinesara.com.br",
+      "address": "Av. Brigadeiro Faria Lima, 2800 - Itaim Bibi, São Paulo - SP",
+      "color": "#059669",
+      "badgeBg": "bg-emerald-50 text-emerald-700 border-emerald-200",
+      "defaultFollowUpDays": 4,
+      "activeCampaigns": [],
+      "rulesNotes": "Prazo padrão de follow-up: 4 dias.",
+      "status": "ativo",
+      "createdAt": "2026-03-10T10:00:00.000Z"
+    }
+  ],
+  "selectedClientId": "todos",
+  "patients": [],
+  "opportunities": [],
+  "procedures": [
+    {
+      "id": "proc-botox",
+      "name": "Botox Terço Superior",
+      "category": "Injetáveis",
+      "commercialDescription": "Toxina botulínica para rugas dinâmicas da testa, glabela e pés de galinha.",
+      "referencePrice": 1800,
+      "status": "ativo"
+    },
+    {
+      "id": "proc-olheiras",
+      "name": "Preenchimento de Olheiras",
+      "category": "Injetáveis",
+      "commercialDescription": "Ácido hialurônico para volumização e hidratação da calha lacrimal.",
+      "referencePrice": 2400,
+      "status": "ativo"
+    },
+    {
+      "id": "proc-labial",
+      "name": "Preenchimento Labial",
+      "category": "Injetáveis",
+      "commercialDescription": "Contorno e hidratação labial com ácido hialurônico premium.",
+      "referencePrice": 2200,
+      "status": "ativo"
+    },
+    {
+      "id": "proc-sculptra",
+      "name": "Bioestimulador Sculptra",
+      "category": "Bioestimuladores",
+      "commercialDescription": "Ácido poli-L-láctico para estímulo intenso de colágeno natural e sustentação.",
+      "referencePrice": 3800,
+      "status": "ativo"
+    },
+    {
+      "id": "proc-radiesse",
+      "name": "Bioestimulador Radiesse",
+      "category": "Bioestimuladores",
+      "commercialDescription": "Hidroxiapatita de cálcio para efeito lifting e colágeno.",
+      "referencePrice": 3500,
+      "status": "ativo"
+    },
+    {
+      "id": "proc-ultraformer",
+      "name": "Ultraformer III Full Face",
+      "category": "Tecnologias",
+      "commercialDescription": "Ultrassom focado para ancoragem muscular e retração de flacidez.",
+      "referencePrice": 4200,
+      "status": "ativo"
+    }
+  ],
+  "tasks": [],
+  "reminders": [],
+  "interactions": [],
+  "auditLogs": [],
+  "clinic": {
+    "id": "cli-camila-silva",
+    "name": "Roones CRM - Camila Rocha (SDR Multiclínicas)",
+    "phone": "(11) 99887-1122",
+    "email": "camila.sdr@gmail.com",
+    "address": "São Paulo - SP",
+    "timezone": "America/Sao_Paulo",
+    "settings": {
+      "autoNextActionAlert": true,
+      "defaultFollowUpDays": 3,
+      "requireNextActionOnOpportunity": true
+    },
+    "createdAt": "2026-01-10T08:00:00.000Z"
+  },
+  "chatHistory": []
+}

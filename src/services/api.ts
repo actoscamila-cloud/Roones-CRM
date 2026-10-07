@@ -65,17 +65,46 @@ export async function deleteClientAPI(id: string): Promise<boolean> {
   return json.success;
 }
 
+export async function fetchChatHistoryAPI(): Promise<import('../types/crm').ChatMessage[]> {
+  const res = await fetch(`${API_BASE}/chat/history`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao carregar histórico');
+  return json.data || [];
+}
+
+export async function saveChatHistoryAPI(messages: import('../types/crm').ChatMessage[]): Promise<import('../types/crm').ChatMessage[]> {
+  const res = await fetch(`${API_BASE}/chat/history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao salvar histórico');
+  return json.data || [];
+}
+
+export async function clearChatHistoryAPI(): Promise<import('../types/crm').ChatMessage[]> {
+  const res = await fetch(`${API_BASE}/chat/clear`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro ao limpar histórico');
+  return json.data || [];
+}
+
 export async function sendChatMessageAPI(
   message: string,
   history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [],
   imageBase64?: string,
   imageMimeType?: string,
-  activeClientId?: string
+  activeClientId?: string,
+  userMessage?: import('../types/crm').ChatMessage
 ) {
   const res = await fetch(`${API_BASE}/ai/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, history, imageBase64, imageMimeType, activeClientId }),
+    body: JSON.stringify({ message, history, imageBase64, imageMimeType, activeClientId, userMessage }),
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error || 'Falha ao processar mensagem');

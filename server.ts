@@ -11,7 +11,19 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+
+  let PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    const parsed = parseInt(process.argv[portArgIndex + 1], 10);
+    if (!isNaN(parsed)) PORT = parsed;
+  }
+
+  let HOST = '0.0.0.0';
+  const hostArgIndex = process.argv.indexOf('--host');
+  if (hostArgIndex !== -1 && process.argv[hostArgIndex + 1]) {
+    HOST = process.argv[hostArgIndex + 1];
+  }
 
   // Body parser with 25MB limit for images & audio
   app.use(express.json({ limit: '25mb' }));
@@ -228,20 +240,78 @@ async function startServer() {
     res.json({ success: true, data: results });
   });
 
-  // 10. AI Chat Processing
+  // 10. AI Chat Processing & History
+  app.get('/api/chat/history', (req, res) => {
+    try {
+      res.json({ success: true, data: db.getChatHistory() });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.post('/api/chat/history', (req, res) => {
+    try {
+      if (Array.isArray(req.body.messages)) {
+        db.setChatHistory(req.body.messages);
+      }
+      res.json({ success: true, data: db.getChatHistory() });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.post('/api/chat/message', (req, res) => {
+    try {
+      if (req.body.message) {
+        db.appendChatMessage(req.body.message);
+      }
+      res.json({ success: true, data: db.getChatHistory() });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.post('/api/chat/clear', (req, res) => {
+    try {
+      db.clearChatHistory();
+      res.json({ success: true, data: db.getChatHistory() });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   app.post('/api/ai/chat', async (req, res) => {
     try {
-      const { message, history, imageBase64, imageMimeType, activeClientId } = req.body;
+      const { message, history, imageBase64, imageMimeType, activeClientId, userMessage } = req.body;
       if (!message && !imageBase64) {
         return res.status(400).json({ success: false, error: 'Mensagem ou anexo é obrigatório.' });
       }
 
+      if (userMessage) {
+        db.appendChatMessage(userMessage);
+      }
+
       const result = await processUserMessage(message || '', history || [], imageBase64, imageMimeType, activeClientId);
+
+      // Create assistant message and persist
+      const assistantMessage = {
+        id: `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        sender: 'assistant' as const,
+        text: result.reply,
+        timestamp: new Date().toISOString(),
+        clientContextId: result.clientContextId,
+        clientContextName: result.clientContextName,
+        actionsExecuted: result.actionsExecuted,
+        suggestedPrompts: result.suggestedPrompts,
+      };
+      db.appendChatMessage(assistantMessage);
+
       const updatedState = db.getState();
 
       res.json({
         success: true,
         data: result,
+        assistantMessage,
         updatedState,
       });
     } catch (err: any) {
@@ -293,8 +363,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Lumina CRM Server rodando em http://localhost:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`Lumina CRM Server rodando em http://${HOST}:${PORT}`);
   });
 }
 

@@ -110,9 +110,10 @@ export interface Opportunity {
   objection?: string;
   nextAction?: string;
   nextActionDate?: string;
-  assignee: string;
+  assignee?: string;
   notes?: string;
   origin?: string;
+  confidenceScore?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -259,4 +260,6 @@ export interface CRMState {
   interactions: Interaction[];
   auditLogs: AuditLog[];
   clinic?: Clinic; // Retrocompatibilidade
+  chatHistory?: ChatMessage[];
+  lastSyncedAt?: string;
 }

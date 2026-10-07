@@ -1,4 +1,6 @@
-import { CRMState, ClientAccount, Patient, Opportunity, Procedure, Task, Reminder, Interaction, AuditLog, User, Clinic } from '../types/crm';
+import fs from 'fs';
+import path from 'path';
+import { CRMState, ClientAccount, Patient, Opportunity, Procedure, Task, Reminder, Interaction, AuditLog, User, Clinic, ChatMessage } from '../types/crm';
 
 export const initialClients: ClientAccount[] = [
   {
@@ -130,46 +132,314 @@ export const initialProcedures: Procedure[] = [
   },
 ];
 
+export function generateUniqueId(prefix: string): string {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function getDynamicSeedData() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+
+  const tom = new Date(now);
+  tom.setDate(tom.getDate() + 1);
+  const tomorrowStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+
+  const twoM = new Date(now);
+  twoM.setMonth(twoM.getMonth() + 2);
+  const twoMonthsStr = `${twoM.getFullYear()}-${String(twoM.getMonth() + 1).padStart(2, '0')}-${String(twoM.getDate()).padStart(2, '0')}`;
+
+  const retoqueDate = '2027-02-15';
+
+  const saraId = 'pat-sara-medina';
+  const facedoctorTaskId = 'task-ultraformer-facedoctor';
+  const followUpTaskId = 'task-sara-followup';
+  const retoqueTaskId = 'task-sara-retoque';
+  const botoxOppId = 'opp-sara-botox';
+  const retoqueOppId = 'opp-sara-retoque';
+  const procIntId = 'int-sara-procedimento';
+
+  const patients: Patient[] = [
+    {
+      id: saraId,
+      clientId: 'cli-thayline',
+      clientName: 'Clínica Dra. Thayline Sara',
+      clinicId: 'cli-thayline',
+      name: 'Sara Medina',
+      phone: '(18) 99194-5607',
+      whatsapp: '5518991945607',
+      origin: 'Conversa com Iza (SDR)',
+      tags: ['Botox', 'Dra. Thayline', 'Retoque 2027'],
+      status: 'ativo',
+      firstContactDate: `${todayStr}T10:00:00.000Z`,
+      lastInteractionDate: `${todayStr}T10:00:00.000Z`,
+      nextAction: 'Follow-up de 2 meses pós-Botox',
+      nextActionDate: twoMonthsStr,
+      commercialNotes: 'Realizou procedimento de Botox hoje. Programado follow-up de 2 meses e lembrete de retoque para fevereiro de 2027.',
+      createdAt: `${todayStr}T10:00:00.000Z`,
+      updatedAt: `${todayStr}T10:00:00.000Z`,
+    },
+  ];
+
+  const opportunities: Opportunity[] = [
+    {
+      id: botoxOppId,
+      clientId: 'cli-thayline',
+      clientName: 'Clínica Dra. Thayline Sara',
+      clinicId: 'cli-thayline',
+      patientId: saraId,
+      patientName: 'Sara Medina',
+      procedureName: 'Toxina Botulínica (Botox)',
+      stage: 'fechado',
+      estimatedValue: 1800,
+      proposedValue: 1800,
+      interest: 'Toxina Botulínica (Botox)',
+      nextAction: 'Follow-up de retorno em 2 meses',
+      nextActionDate: twoMonthsStr,
+      confidenceScore: 100,
+      createdAt: `${todayStr}T10:00:00.000Z`,
+      updatedAt: `${todayStr}T10:00:00.000Z`,
+    },
+    {
+      id: retoqueOppId,
+      clientId: 'cli-thayline',
+      clientName: 'Clínica Dra. Thayline Sara',
+      clinicId: 'cli-thayline',
+      patientId: saraId,
+      patientName: 'Sara Medina',
+      procedureName: 'Retoque de Botox',
+      stage: 'aguardando_decisao',
+      estimatedValue: 1800,
+      proposedValue: 1800,
+      interest: 'Retoque de Botox (ciclo semestral)',
+      nextAction: 'Lembrete de retoque de Botox',
+      nextActionDate: retoqueDate,
+      confidenceScore: 80,
+      createdAt: `${todayStr}T10:00:00.000Z`,
+      updatedAt: `${todayStr}T10:00:00.000Z`,
+    },
+  ];
+
+  const tasks: Task[] = [
+    {
+      id: facedoctorTaskId,
+      title: 'Finalizar reativação do Ultraformer',
+      description: 'Entrar em contato com a base de pacientes inativos para finalizar a campanha de reativação do Ultraformer III na Face Doctor.',
+      responsible: 'Camila Rocha',
+      clientId: 'cli-facedoctor',
+      clientName: 'Clínica Face Doctor Parque Prado',
+      priority: 'alta',
+      category: 'comercial',
+      date: tomorrowStr,
+      time: '10:00',
+      status: 'pendente',
+      origin: 'ia_chat',
+      createdAt: `${todayStr}T10:00:00.000Z`,
+    },
+    {
+      id: followUpTaskId,
+      title: 'Chamar Sara Medina - Follow-up 2 meses pós-Botox',
+      description: 'Ligar ou enviar WhatsApp para Sara Medina ((18) 99194-5607) para verificar a evolução e satisfação pós-aplicação de Toxina Botulínica.',
+      responsible: 'Camila Rocha',
+      clientId: 'cli-thayline',
+      clientName: 'Clínica Dra. Thayline Sara',
+      patientId: saraId,
+      patientName: 'Sara Medina',
+      priority: 'alta',
+      category: 'follow-up',
+      date: twoMonthsStr,
+      time: '10:00',
+      status: 'pendente',
+      origin: 'ia_chat',
+      createdAt: `${todayStr}T10:00:00.000Z`,
+    },
+    {
+      id: retoqueTaskId,
+      title: 'Lembrete: Retoque de Botox - Sara Medina',
+      description: 'Contatar Sara Medina ((18) 99194-5607) para agendamento do retoque da Toxina Botulínica referente ao procedimento realizado hoje.',
+      responsible: 'Camila Rocha',
+      clientId: 'cli-thayline',
+      clientName: 'Clínica Dra. Thayline Sara',
+      patientId: saraId,
+      patientName: 'Sara Medina',
+      priority: 'normal',
+      category: 'follow-up',
+      date: retoqueDate,
+      time: '10:00',
+      status: 'pendente',
+      origin: 'ia_chat',
+      createdAt: `${todayStr}T10:00:00.000Z`,
+    },
+  ];
+
+  const interactions: Interaction[] = [
+    {
+      id: procIntId,
+      patientId: saraId,
+      clientId: 'cli-thayline',
+      clientName: 'Clínica Dra. Thayline Sara',
+      type: 'procedimento',
+      author: 'Iza (Assistente SDR)',
+      origin: 'chat_ia',
+      content: `Procedimento realizado hoje: Toxina Botulínica (Botox). Telefone: (18) 99194-5607. Programados: follow-up para ${twoMonthsStr} e lembrete de retoque para fevereiro de 2027.`,
+      date: `${todayStr}T10:00:00.000Z`,
+    },
+  ];
+
+  return { patients, opportunities, tasks, interactions };
+}
+
 export const initialPatients: Patient[] = [];
-
 export const initialOpportunities: Opportunity[] = [];
-
 export const initialTasks: Task[] = [];
-
 export const initialReminders: Reminder[] = [];
-
 export const initialInteractions: Interaction[] = [];
-
 export const initialAuditLogs: AuditLog[] = [];
 
 class DatabaseStore {
-  private state: CRMState;
+  private state!: CRMState;
+  private dbFilePath = path.resolve(process.cwd(), 'data', 'crm_store.json');
+
+  private saveToDisk(): void {
+    try {
+      const dataDir = path.dirname(this.dbFilePath);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      const tmpPath = `${this.dbFilePath}.tmp`;
+      fs.writeFileSync(tmpPath, JSON.stringify(this.state, null, 2), 'utf-8');
+      fs.renameSync(tmpPath, this.dbFilePath);
+    } catch (err) {
+      console.error('[DatabaseStore] Erro ao salvar estado no disco:', err);
+    }
+  }
+
+  private loadFromDisk(): boolean {
+    try {
+      if (fs.existsSync(this.dbFilePath)) {
+        const raw = fs.readFileSync(this.dbFilePath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.clients) && Array.isArray(parsed.patients)) {
+          this.state = parsed;
+          if (!this.state.chatHistory || this.state.chatHistory.length === 0) {
+            this.state.chatHistory = [
+              {
+                id: 'msg-welcome',
+                sender: 'assistant',
+                text: 'Olá Camila! Sou a Iza, sua assistente operacional comercial do CRM. Estou conectada às suas clínicas e pronta para operar seus atendimentos, cadastrar pacientes, criar tarefas, registrar follow-ups e movimentar pipelines em tempo real.',
+                timestamp: new Date().toISOString(),
+                suggestedPrompts: [
+                  'Quem eu preciso chamar hoje?',
+                  'Cadastrar nova paciente e agendar retorno',
+                  'Quais oportunidades estão sem próxima ação?',
+                  'Criar uma tarefa comercial para hoje',
+                ],
+              },
+            ];
+          }
+          console.log(`[DatabaseStore] Estado carregado com sucesso do disco: ${this.state.patients.length} pacientes, ${this.state.tasks.length} tarefas, ${this.state.clients.length} clínicas.`);
+          return true;
+        }
+      }
+    } catch (err) {
+      console.error('[DatabaseStore] Erro ao ler arquivo do disco:', err);
+    }
+    return false;
+  }
 
   constructor() {
-    this.state = {
-      currentUser: { ...initialUser },
-      clients: JSON.parse(JSON.stringify(initialClients)),
-      selectedClientId: 'todos',
-      patients: JSON.parse(JSON.stringify(initialPatients)),
-      opportunities: JSON.parse(JSON.stringify(initialOpportunities)),
-      procedures: JSON.parse(JSON.stringify(initialProcedures)),
-      tasks: JSON.parse(JSON.stringify(initialTasks)),
-      reminders: JSON.parse(JSON.stringify(initialReminders)),
-      interactions: JSON.parse(JSON.stringify(initialInteractions)),
-      auditLogs: JSON.parse(JSON.stringify(initialAuditLogs)),
-      clinic: { ...initialClinicFallback },
-    };
+    const loaded = this.loadFromDisk();
+    if (!loaded) {
+      const seed = getDynamicSeedData();
+      this.state = {
+        currentUser: { ...initialUser },
+        clients: JSON.parse(JSON.stringify(initialClients)),
+        selectedClientId: 'todos',
+        patients: seed.patients,
+        opportunities: seed.opportunities,
+        procedures: JSON.parse(JSON.stringify(initialProcedures)),
+        tasks: seed.tasks,
+        reminders: [],
+        interactions: seed.interactions,
+        auditLogs: [],
+        clinic: { ...initialClinicFallback },
+        chatHistory: [
+          {
+            id: 'msg-welcome',
+            sender: 'assistant',
+            text: 'Olá Camila! Sou a Iza, sua assistente operacional comercial do CRM. Estou conectada às suas clínicas e pronta para operar seus atendimentos, cadastrar pacientes, criar tarefas, registrar follow-ups e movimentar pipelines em tempo real.',
+            timestamp: new Date().toISOString(),
+            suggestedPrompts: [
+              'Quem eu preciso chamar hoje?',
+              'Cadastrar nova paciente e agendar retorno',
+              'Quais oportunidades estão sem próxima ação?',
+              'Criar uma tarefa comercial para hoje',
+            ],
+          },
+        ],
+      };
+      this.saveToDisk();
+      console.log('[DatabaseStore] Estado inicializado com dados dinâmicos e salvo em disco.');
+    }
   }
 
   public getState(): CRMState {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    let modified = false;
     this.state.tasks.forEach((t) => {
       if (t.status === 'pendente' && t.date < todayStr) {
         t.status = 'atrasada';
+        modified = true;
       }
     });
-    return this.state;
+    if (modified) {
+      this.saveToDisk();
+    }
+    return {
+      ...this.state,
+      lastSyncedAt: new Date().toISOString(),
+    };
+  }
+
+  public getChatHistory(): ChatMessage[] {
+    return this.state.chatHistory || [];
+  }
+
+  public appendChatMessage(msg: ChatMessage): void {
+    if (!this.state.chatHistory) {
+      this.state.chatHistory = [];
+    }
+    this.state.chatHistory.push(msg);
+    if (this.state.chatHistory.length > 200) {
+      this.state.chatHistory = this.state.chatHistory.slice(-200);
+    }
+    this.saveToDisk();
+  }
+
+  public setChatHistory(messages: ChatMessage[]): void {
+    this.state.chatHistory = messages;
+    this.saveToDisk();
+  }
+
+  public clearChatHistory(): void {
+    this.state.chatHistory = [
+      {
+        id: 'msg-welcome',
+        sender: 'assistant',
+        text: 'Olá Camila! Sou a Iza, sua assistente operacional comercial do CRM. Estou conectada às suas clínicas e pronta para operar seus atendimentos, cadastrar pacientes, criar tarefas, registrar follow-ups e movimentar pipelines em tempo real.',
+        timestamp: new Date().toISOString(),
+        suggestedPrompts: [
+          'Quem eu preciso chamar hoje?',
+          'Cadastrar nova paciente e agendar retorno',
+          'Quais oportunidades estão sem próxima ação?',
+          'Criar uma tarefa comercial para hoje',
+        ],
+      },
+    ];
+    this.saveToDisk();
   }
 
   public resetToDefault() {
@@ -185,7 +455,9 @@ class DatabaseStore {
       interactions: JSON.parse(JSON.stringify(initialInteractions)),
       auditLogs: JSON.parse(JSON.stringify(initialAuditLogs)),
       clinic: { ...initialClinicFallback },
+      chatHistory: [],
     };
+    this.saveToDisk();
     return this.state;
   }
 
@@ -204,6 +476,7 @@ class DatabaseStore {
       'Limpeza Geral',
       'Todos os dados de teste foram apagados. Sistema pronto para operação real.'
     );
+    this.saveToDisk();
     return this.state;
   }
 
@@ -257,7 +530,7 @@ class DatabaseStore {
   }
 
   public createClient(data: Partial<ClientAccount>, author = 'Camila Rocha (SDR)'): ClientAccount {
-    const newId = `cli-${Date.now().toString(36)}`;
+    const newId = generateUniqueId('cli');
     const client: ClientAccount = {
       id: newId,
       name: data.name || 'Nova Clínica Parceira',
@@ -285,6 +558,7 @@ class DatabaseStore {
       'Cadastro de Cliente/Clínica',
       `Cadastrada nova conta comercial: ${client.name}`
     );
+    this.saveToDisk();
     return client;
   }
 
@@ -317,6 +591,7 @@ class DatabaseStore {
       JSON.stringify(updates),
       JSON.stringify(previous)
     );
+    this.saveToDisk();
     return updated;
   }
 
@@ -336,6 +611,7 @@ class DatabaseStore {
       'Exclusão de Cliente/Clínica',
       `Conta comercial ${client.name} excluída.`
     );
+    this.saveToDisk();
     return true;
   }
 
@@ -356,6 +632,7 @@ class DatabaseStore {
       JSON.stringify(updates),
       JSON.stringify(previous)
     );
+    this.saveToDisk();
     return this.state.currentUser;
   }
 
@@ -374,6 +651,7 @@ class DatabaseStore {
       JSON.stringify(updates),
       JSON.stringify(previous)
     );
+    this.saveToDisk();
     return this.state.clinic;
   }
 
@@ -394,6 +672,7 @@ class DatabaseStore {
     if (idx === -1) return false;
     const removed = this.state.patients.splice(idx, 1)[0];
     this.logAudit(author, 'paciente', removed.id, removed.name, 'Exclusão de Paciente', 'Paciente removido com sucesso');
+    this.saveToDisk();
     return true;
   }
 
@@ -423,11 +702,15 @@ class DatabaseStore {
   }
 
   public createPatient(patientData: Partial<Patient>, author = 'IA (via Chat SDR)'): Patient {
-    const newId = `pat-${Date.now().toString(36)}`;
+    const newId = generateUniqueId('pat');
     const now = new Date().toISOString();
 
     // Determina o cliente da paciente
     let clientId = patientData.clientId || this.state.selectedClientId;
+    if ((!clientId || clientId === 'todos') && patientData.clientName) {
+      const c = this.findClientByName(patientData.clientName);
+      if (c) clientId = c.id;
+    }
     if (!clientId || clientId === 'todos') {
       clientId = 'cli-camila-silva'; // Default se não especificado
     }
@@ -436,7 +719,7 @@ class DatabaseStore {
     const patient: Patient = {
       id: newId,
       clientId,
-      clientName: client?.name || 'Clínica Camila Silva',
+      clientName: client?.name || patientData.clientName || 'Clínica Camila Silva',
       clinicId: clientId,
       name: patientData.name || 'Nova Paciente',
       phone: patientData.phone || '',
@@ -467,6 +750,7 @@ class DatabaseStore {
       `Cliente: ${patient.clientName} | Telefone: ${patient.phone || 'Não informado'}`
     );
 
+    this.saveToDisk();
     return patient;
   }
 
@@ -493,6 +777,7 @@ class DatabaseStore {
       JSON.stringify(previous)
     );
 
+    this.saveToDisk();
     return updated;
   }
 
@@ -520,19 +805,22 @@ class DatabaseStore {
       'Exclusão de Oportunidade',
       'Oportunidade removida'
     );
+    this.saveToDisk();
     return true;
   }
 
   public createOpportunity(oppData: Partial<Opportunity>, author = 'IA (via Chat SDR)'): Opportunity {
-    const newId = `opp-${Date.now().toString(36)}`;
+    const newId = generateUniqueId('opp');
     const now = new Date().toISOString();
 
     let clientId = oppData.clientId;
-    if (!clientId) {
-      if (oppData.patientId) {
-        const p = this.findPatientById(oppData.patientId);
-        if (p) clientId = p.clientId;
-      }
+    if (!clientId && oppData.clientName) {
+      const c = this.findClientByName(oppData.clientName);
+      if (c) clientId = c.id;
+    }
+    if (!clientId && oppData.patientId) {
+      const p = this.findPatientById(oppData.patientId);
+      if (p) clientId = p.clientId;
     }
     if (!clientId || clientId === 'todos') {
       clientId = 'cli-camila-silva';
@@ -573,6 +861,7 @@ class DatabaseStore {
       `Cliente: ${opportunity.clientName} | Etapa: ${opportunity.stage} | Valor: R$ ${opportunity.estimatedValue || 0}`
     );
 
+    this.saveToDisk();
     return opportunity;
   }
 
@@ -599,6 +888,7 @@ class DatabaseStore {
       JSON.stringify(previous)
     );
 
+    this.saveToDisk();
     return updated;
   }
 
@@ -619,30 +909,45 @@ class DatabaseStore {
     if (idx === -1) return false;
     const removed = this.state.tasks.splice(idx, 1)[0];
     this.logAudit(author, 'tarefa', removed.id, removed.title, 'Exclusão de Tarefa', 'Tarefa removida');
+    this.saveToDisk();
     return true;
   }
 
   public createTask(taskData: Partial<Task>, author = 'IA (via Chat SDR)'): Task {
-    const newId = `task-${Date.now().toString(36)}`;
+    const newId = generateUniqueId('task');
     const now = new Date().toISOString();
 
     let clientId = taskData.clientId;
+    if (!clientId && taskData.clientName) {
+      const c = this.findClientByName(taskData.clientName);
+      if (c) clientId = c.id;
+    }
     if (!clientId && taskData.patientId) {
       const p = this.findPatientById(taskData.patientId);
       if (p) clientId = p.clientId;
     }
 
-    const client = clientId ? this.getClientById(clientId) : undefined;
+    const client = clientId ? this.getClientById(clientId) : (taskData.clientName ? this.findClientByName(taskData.clientName) : undefined);
+
+    let patientId = taskData.patientId;
+    let patientName = taskData.patientName;
+    if (!patientId && patientName) {
+      const p = this.findPatientByName(patientName, client?.id);
+      if (p.length > 0) {
+        patientId = p[0].id;
+        patientName = p[0].name;
+      }
+    }
 
     const task: Task = {
       id: newId,
       title: taskData.title || 'Nova Tarefa Comercial',
       description: taskData.description,
       responsible: taskData.responsible || this.state.currentUser.name,
-      clientId,
+      clientId: client?.id || clientId,
       clientName: client?.name || taskData.clientName,
-      patientId: taskData.patientId,
-      patientName: taskData.patientName,
+      patientId,
+      patientName,
       opportunityId: taskData.opportunityId,
       priority: taskData.priority || 'normal',
       category: taskData.category || (clientId ? 'follow-up' : 'interna'),
@@ -664,6 +969,7 @@ class DatabaseStore {
       `Cliente: ${task.clientName || 'Interna'} | Data: ${task.date} | Prioridade: ${task.priority}`
     );
 
+    this.saveToDisk();
     return task;
   }
 
@@ -693,6 +999,7 @@ class DatabaseStore {
       `Status anterior: ${previous.status}`
     );
 
+    this.saveToDisk();
     return updated;
   }
 
@@ -702,14 +1009,23 @@ class DatabaseStore {
   }
 
   public createReminder(reminderData: Partial<Reminder>, author = 'IA (via Chat SDR)'): Reminder {
-    const newId = `rem-${Date.now().toString(36)}`;
+    const newId = generateUniqueId('rem');
+    let clientId = reminderData.clientId;
+    let clientName = reminderData.clientName;
+    if (!clientId && clientName) {
+      const c = this.findClientByName(clientName);
+      if (c) {
+        clientId = c.id;
+        clientName = c.name;
+      }
+    }
     const reminder: Reminder = {
       id: newId,
       text: reminderData.text || '',
       date: reminderData.date || new Date().toISOString().split('T')[0],
       time: reminderData.time || '09:00',
-      clientId: reminderData.clientId,
-      clientName: reminderData.clientName,
+      clientId,
+      clientName,
       patientId: reminderData.patientId,
       patientName: reminderData.patientName,
       isCompleted: false,
@@ -727,6 +1043,7 @@ class DatabaseStore {
       `Data: ${reminder.date}`
     );
 
+    this.saveToDisk();
     return reminder;
   }
 
@@ -739,21 +1056,41 @@ class DatabaseStore {
   }
 
   public createInteraction(interactionData: Partial<Interaction>): Interaction {
-    const newId = `int-${Date.now().toString(36)}`;
+    const newId = generateUniqueId('int');
     let clientId = interactionData.clientId;
     let clientName = interactionData.clientName;
 
-    if (!clientId && interactionData.patientId) {
-      const p = this.findPatientById(interactionData.patientId);
+    if (!clientId && clientName) {
+      const c = this.findClientByName(clientName);
+      if (c) {
+        clientId = c.id;
+        clientName = c.name;
+      }
+    }
+
+    let patientId = interactionData.patientId;
+    if (!clientId && patientId) {
+      const p = this.findPatientById(patientId);
       if (p) {
         clientId = p.clientId;
         clientName = p.clientName;
       }
     }
 
+    if (!patientId && (interactionData as any).patientName) {
+      const p = this.findPatientByName((interactionData as any).patientName, clientId);
+      if (p.length > 0) {
+        patientId = p[0].id;
+        if (!clientId) {
+          clientId = p[0].clientId;
+          clientName = p[0].clientName;
+        }
+      }
+    }
+
     const interaction: Interaction = {
       id: newId,
-      patientId: interactionData.patientId || '',
+      patientId: patientId || '',
       clientId,
       clientName,
       type: interactionData.type || 'observacao',
@@ -775,6 +1112,7 @@ class DatabaseStore {
       }
     }
 
+    this.saveToDisk();
     return interaction;
   }
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCRM } from '../context/CRMContext';
+import { PWAInstallButton } from '../components/PWAInstallButton';
+import { SyncIndicator } from '../components/SyncIndicator';
 import {
   User,
   ShieldCheck,
@@ -18,6 +20,9 @@ import {
   Clock,
   Database,
   Trash2,
+  Cloud,
+  Smartphone,
+  RefreshCw,
 } from 'lucide-react';
 
 export const ConfigView: React.FC = () => {
@@ -478,6 +483,38 @@ export const ConfigView: React.FC = () => {
             </div>
           </div>
 
+          {/* Versão App & Celular (PWA) */}
+          <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="font-semibold text-blue-950 flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-blue-800" />
+                <span>Aplicativo no Celular (PWA)</span>
+              </div>
+              <p className="text-slate-600 text-[11px]">
+                Instale o Roones CRM na tela de início do seu iPhone ou Android para ter acesso instantâneo sem abrir o navegador.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <PWAInstallButton variant="header" />
+            </div>
+          </div>
+
+          {/* Sincronização & Persistência Multi-Navegador */}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="font-semibold text-slate-900 flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-emerald-600" />
+                <span>Sincronização em Tempo Real na Nuvem</span>
+              </div>
+              <p className="text-slate-500 text-[11px]">
+                Todos os dados de pacientes, tarefas e pipelines são persistidos no servidor e sincronizados automaticamente entre múltiplos navegadores e celulares.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <SyncIndicator />
+            </div>
+          </div>
+
           <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="font-semibold text-slate-900">Zerar Base para Produção Real</div>
@@ -489,7 +526,7 @@ export const ConfigView: React.FC = () => {
             <button
               onClick={handleClearAll}
               disabled={isResetting}
-              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-xl font-semibold transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-xl font-semibold transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
             >
               <Trash2 className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} />
               <span>{isResetting ? 'Limpando...' : 'Zerar Dados Fictícios'}</span>
